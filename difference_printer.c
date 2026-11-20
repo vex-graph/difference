@@ -41,6 +41,24 @@ static inline fn Printer_setLastFileSize(DifferencePrinter *p, i64 v) { (*p).las
 static inline FileEventType Printer_lastEventType(const DifferencePrinter *p) { return (*p).lastEventType; }
 ;;SETTER
 static inline fn Printer_setLastEventType(DifferencePrinter *p, FileEventType t) { (*p).lastEventType = t; }
+;;GETTER
+static inline u32 Printer_maxAddDigits(const DifferencePrinter *p) { return (*p).maxAddDigits; }
+;;SETTER
+static inline fn Printer_setMaxAddDigits(DifferencePrinter *p, u32 d) { (*p).maxAddDigits = d; }
+;;GETTER
+static inline u32 Printer_maxDelDigits(const DifferencePrinter *p) { return (*p).maxDelDigits; }
+;;SETTER
+static inline fn Printer_setMaxDelDigits(DifferencePrinter *p, u32 d) { (*p).maxDelDigits = d; }
+
+/** Returns the decimal digit length of v (minimum 1). */
+static u32 printerDigitCount(u64 v) {
+    u32 d = 1u;
+    while (v >= 10u) {
+        v /= 10u;
+        d++;
+    }
+    return d;
+}
 
 ;;GETTER
 static const char *WatchEv_rel(const FileWatchEvent *e) { return (*e).relativePath; }
@@ -152,6 +170,13 @@ static fn differenceHeaderHook(const TerminalDiffPanel *panel,
         fputs("\x1b[0m", out);
     fputc('\n', out);
 
+    u32 addW = (pr && Printer_maxAddDigits(pr) > 0u) ? Printer_maxAddDigits(pr) : printerDigitCount(added);
+    u32 delW = (pr && Printer_maxDelDigits(pr) > 0u) ? Printer_maxDelDigits(pr) : printerDigitCount(removed);
+    char addStr[24];
+    char delStr[24];
+    snprintf(addStr, sizeof(addStr), "+%u", (unsigned) added);
+    snprintf(delStr, sizeof(delStr), "-%u", (unsigned) removed);
+
     emitRgbFg(out, color, TERMINAL_RGB(130, 140, 156));
     fprintf(out, "#%llu ", (unsigned long long) seq);
 
@@ -171,9 +196,9 @@ static fn differenceHeaderHook(const TerminalDiffPanel *panel,
         fputs("\x1b[0m", out);
 
     emitRgbFg(out, color, TERMINAL_RGB(126, 231, 135));
-    fprintf(out, "  +%u", (unsigned) added);
+    fprintf(out, "  %*s", (int) (addW + 1u), addStr);
     emitRgbFg(out, color, TERMINAL_RGB(255, 123, 114));
-    fprintf(out, " -%u", (unsigned) removed);
+    fprintf(out, " %*s", (int) (delW + 1u), delStr);
 
     u32 total = added + removed;
     if (total > 0) {
@@ -267,6 +292,12 @@ bool DifferencePrinter_print(DifferencePrinter *printer,
     Printer_setEditCounter(printer, Printer_editCounter(printer) + 1u);
     Printer_setLastFileSize(printer, WatchEv_size(event));
     Printer_setLastEventType(printer, WatchEv_type(event));
+    u32 ad = printerDigitCount(diff ? Diff_added(diff) : 0u);
+    u32 dd = printerDigitCount(diff ? Diff_removed(diff) : 0u);
+    if (ad > Printer_maxAddDigits(printer))
+        Printer_setMaxAddDigits(printer, ad);
+    if (dd > Printer_maxDelDigits(printer))
+        Printer_setMaxDelDigits(printer, dd);
 
     char tsBuf[32];
     formatTimestamp(WatchEv_epoch(event), tsBuf, sizeof(tsBuf));

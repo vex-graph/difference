@@ -14,6 +14,8 @@ typedef struct DifferencePrinter {
     u64 editCounter;
     i64 lastFileSize;
     FileEventType lastEventType;
+    u32 maxAddDigits;
+    u32 maxDelDigits;
 } DifferencePrinter;
 
 fn DifferencePrinter_init(DifferencePrinter *printer);
