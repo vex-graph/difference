@@ -12,6 +12,7 @@
 #include "nio/mem.h"
 #include "diff_engine.h"
 #include "difference_printer.h"
+#include "difference_settings.h"
 #include "difference_tui.h"
 #include "snapshot_store.h"
 
@@ -41,19 +42,33 @@ static atomic_bool g_stopRequested = false;
 
 typedef struct WatchApp {
     SnapshotStore store;
+    SnapshotSeeder seeder;
     DifferencePrinter printer;
     DifferenceTui *tui;
     FILE *out;
+    bytes lastReportedFiles;
+    char settingsPath[1024];
+    bool haveSettingsPath;
 } WatchApp;
 
 ;;GETTER
 static inline SnapshotStore *App_storeMut(WatchApp *a) { return &(*a).store; }
+;;GETTER
+static inline SnapshotSeeder *App_seederMut(WatchApp *a) { return &(*a).seeder; }
 ;;GETTER
 static inline DifferencePrinter *App_printerMut(WatchApp *a) { return &(*a).printer; }
 ;;GETTER
 static inline DifferenceTui *App_tui(const WatchApp *a) { return (*a).tui; }
 ;;GETTER
 static inline FILE *App_out(const WatchApp *a) { return (*a).out; }
+;;GETTER
+static inline bytes App_lastReported(const WatchApp *a) { return (*a).lastReportedFiles; }
+;;SETTER
+static inline fn App_setLastReported(WatchApp *a, bytes n) { (*a).lastReportedFiles = n; }
+;;GETTER
+static inline const char *App_settingsPath(const WatchApp *a) { return (*a).settingsPath; }
+;;GETTER
+static inline bool App_haveSettingsPath(const WatchApp *a) { return (*a).haveSettingsPath; }
 ;;GETTER
 static inline const char *Ev_path(const FileWatchEvent *e) { return (*e).path; }
 ;;GETTER
@@ -146,6 +161,37 @@ static fn onWatchEvent(const FileWatchEvent *event, any userdata) {
         DifferenceTui_setTrackedFiles(App_tui(app), SnapshotStore_count(store));
 }
 
+/** Updates SnapshotStore workspace data cap when edited live in TUI Settings. */
+static fn onWorkspaceLimitChanged(u32 limitMb, any userdata) {
+    WatchApp *app = (WatchApp*) userdata;
+    if (!app)
+        return;
+    SnapshotStore_setMaxWorkspaceBytes(App_storeMut(app), (bytes) limitMb * 1024u * 1024u);
+}
+
+/** Persists TUI settings atomically under the R1 manifest root on every change. */
+static fn onSettingsChanged(const DifferenceSettings *settings, any userdata) {
+    WatchApp *app = (WatchApp*) userdata;
+    if (!app || !settings || !App_haveSettingsPath(app))
+        return;
+    (discard) DifferenceSettings_save(settings, App_settingsPath(app));
+}
+
+/** Advances incremental directory seeding between TUI frames so startup paints immediately. */
+static bool onIdleSeed(any userdata) {
+    WatchApp *app = (WatchApp*) userdata;
+    if (!app)
+        return false;
+    bool more = SnapshotSeeder_step(App_seederMut(app), 32u);
+    bytes now = SnapshotStore_count(App_storeMut(app));
+    if (now != App_lastReported(app)) {
+        App_setLastReported(app, now);
+        if (App_tui(app))
+            DifferenceTui_setTrackedFiles(App_tui(app), now);
+    }
+    return more;
+}
+
 /** Prints CLI usage summary to stderr. */
 static fn printUsage() {
     fputs("Usage: difference [dir] [--tui|--stream] [--unified|--split] [--cols N] [--no-color] [--all]\n", stderr);
@@ -154,10 +200,11 @@ static fn printUsage() {
 /** Watches the target directory (default cwd) in TUI mode (TTY) or stream mode. */
 i32 main(i32 argc, char **argv) {
     const char *targetArg = ".";
-    TerminalDiffLayoutMode layout = TERMINAL_DIFF_LAYOUT_AUTO;
+    TerminalDiffLayoutMode cliLayout = TERMINAL_DIFF_LAYOUT_AUTO;
+    bool cliLayoutSet = false;
+    bool cliNoColor = false;
     u32 overrideCols = 0u;
     bool isTty = isatty(STDOUT_FILENO) != 0 && isatty(STDIN_FILENO) != 0;
-    bool useColor = isatty(STDOUT_FILENO) != 0;
     bool useTui = isTty;
     bool includeHidden = false;
 
@@ -169,12 +216,14 @@ i32 main(i32 argc, char **argv) {
             useTui = true;
         else if (argEq(argv[i], "--stream"))
             useTui = false;
-        else if (argEq(argv[i], "--unified"))
-            layout = TERMINAL_DIFF_LAYOUT_UNIFIED;
-        else if (argEq(argv[i], "--split"))
-            layout = TERMINAL_DIFF_LAYOUT_SIDE_BY_SIDE;
-        else if (argEq(argv[i], "--no-color"))
-            useColor = false;
+        else if (argEq(argv[i], "--unified")) {
+            cliLayout = TERMINAL_DIFF_LAYOUT_UNIFIED;
+            cliLayoutSet = true;
+        } else if (argEq(argv[i], "--split")) {
+            cliLayout = TERMINAL_DIFF_LAYOUT_SIDE_BY_SIDE;
+            cliLayoutSet = true;
+        } else if (argEq(argv[i], "--no-color"))
+            cliNoColor = true;
         else if (argEq(argv[i], "--all"))
             includeHidden = true;
         else if (argEq(argv[i], "--cols") && i + 1 < argc)
@@ -202,20 +251,38 @@ i32 main(i32 argc, char **argv) {
     WatchApp app;
     memset(&app, 0, sizeof(app));
     app.out = stdout;
+    DifferenceSettings settings = DifferenceSettings_0();
+    app.haveSettingsPath = DifferenceSettings_resolvePath(app.settingsPath, sizeof(app.settingsPath));
+    if (app.haveSettingsPath)
+        (discard) DifferenceSettings_load(&settings, app.settingsPath);
+    if (cliLayoutSet)
+        (discard) DifferenceSettings_setDiffLayout(&settings, cliLayout);
+    if (cliNoColor || !isatty(STDOUT_FILENO))
+        DifferenceSettings_setColor(&settings, false);
+
+    TerminalDiffLayoutMode activeLayout = DifferenceSettings_getDiffLayout(&settings);
+    bool activeColor = DifferenceSettings_isColor(&settings);
+
     SnapshotStore_init(&app.store, 256u * 1024u);
+    SnapshotStore_setMaxWorkspaceBytes(&app.store,
+                                       (bytes) DifferenceSettings_getWorkspaceLimitMb(&settings) * 1024u * 1024u);
     DifferencePrinter_init(&app.printer);
-    DifferencePrinter_setLayoutMode(&app.printer, layout);
+    DifferencePrinter_setLayoutMode(&app.printer, activeLayout);
     DifferencePrinter_setColumns(&app.printer, overrideCols);
-    DifferencePrinter_setColor(&app.printer, useColor);
+    DifferencePrinter_setColor(&app.printer, activeColor);
 
     DifferenceTui tui;
     if (useTui) {
-        if (!DifferenceTui_init(&tui, resolved, layout, useColor)) {
+        if (!DifferenceTui_init(&tui, resolved, activeLayout, activeColor)) {
             fputs("difference: failed to initialize TUI\n", stderr);
             SnapshotStore_free(&app.store);
             Memory_freeAll();
             return 1;
         }
+        DifferenceTui_setWorkspaceLimitHook(&tui, onWorkspaceLimitChanged, &app);
+        DifferenceTui_applySettings(&tui, &settings);
+        if (app.haveSettingsPath)
+            DifferenceTui_setSettingsChangedHook(&tui, onSettingsChanged, &app);
         app.tui = &tui;
     }
 
@@ -244,10 +311,6 @@ i32 main(i32 argc, char **argv) {
         return 1;
     }
 
-    (discard) SnapshotStore_seedDir(&app.store, resolved, watcher);
-    if (useTui)
-        DifferenceTui_setTrackedFiles(&tui, SnapshotStore_count(&app.store));
-
     if (!FileEventWatcher_start(watcher)) {
         fputs("difference: failed to start file watcher\n", stderr);
         FileEventWatcher_destroy(watcher);
@@ -259,9 +322,13 @@ i32 main(i32 argc, char **argv) {
     }
 
     i32 rc = 0;
-    if (useTui)
+    if (useTui) {
+        if (SnapshotSeeder_begin(&app.seeder, &app.store, resolved, watcher))
+            DifferenceTui_setIdleHook(&tui, onIdleSeed, &app);
         rc = DifferenceTui_run(&tui, watcher);
-    else {
+        SnapshotSeeder_finish(&app.seeder);
+    } else {
+        (discard) SnapshotStore_seedDir(&app.store, resolved, watcher);
         signal(SIGINT, onSignal);
         signal(SIGTERM, onSignal);
         fprintf(stdout, "difference: watching %s (%zu files tracked; Ctrl-C to stop)\n",
