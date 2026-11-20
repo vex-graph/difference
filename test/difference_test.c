@@ -12,6 +12,7 @@
 #include "nio/mem.h"
 #include "difference/diff_engine.h"
 #include "difference/difference_printer.h"
+#include "difference/difference_settings.h"
 #include "difference/difference_tui.h"
 #include "difference/snapshot_store.h"
 
@@ -40,6 +41,23 @@ static fn suite_engine() {
     assert(DiffEngine_compute(oldText, strlen(oldText), oldText, strlen(oldText), 3u, &same));
     assert(same.hunkCount == 0u && same.linesAdded == 0u && same.linesRemoved == 0u);
     DiffEngine_free(&same);
+
+    const char *nlOld = "alpha\nomega\n";
+    const char *nlNew = "alpha\n\nomega\n";
+    DiffResult nlDiff;
+    assert(DiffEngine_compute(nlOld, strlen(nlOld), nlNew, strlen(nlNew), 1u, &nlDiff));
+    assert(nlDiff.linesAdded == 1u && nlDiff.linesRemoved == 0u);
+    assert(nlDiff.hunkCount == 1u);
+    bool sawBlankAdd = false;
+    for (bytes i = 0u; i < nlDiff.hunks[0].lineCount; i++) {
+        if (nlDiff.hunks[0].lines[i].kind == TERMINAL_DIFF_ADDED) {
+            assert(nlDiff.hunks[0].lines[i].length == 0u);
+            assert(nlDiff.hunks[0].lines[i].text[0] == '\0');
+            sawBlankAdd = true;
+        }
+    }
+    assert(sawBlankAdd);
+    DiffEngine_free(&nlDiff);
     Memory_freeAll();
 }
 
@@ -132,18 +150,75 @@ static fn suite_snapshot() {
     assert(SnapshotStore_remove(&store, txtPath));
     assert(SnapshotStore_count(&store) == 0u);
 
+    for (u32 i = 0u; i < 300u; i++) {
+        char k[64];
+        char v[32];
+        snprintf(k, sizeof(k), "/virtual/file_%u.c", (unsigned) i);
+        snprintf(v, sizeof(v), "val=%u", (unsigned) i);
+        assert(SnapshotStore_put(&store, k, v, strlen(v)));
+    }
+    assert(SnapshotStore_count(&store) == 300u);
+    for (u32 i = 0u; i < 150u; i++) {
+        char k[64];
+        snprintf(k, sizeof(k), "/virtual/file_%u.c", (unsigned) (i * 2u));
+        assert(SnapshotStore_remove(&store, k));
+        assert(SnapshotStore_find(&store, k) == nullptr);
+    }
+    assert(SnapshotStore_count(&store) == 150u);
+    for (u32 i = 0u; i < 150u; i++) {
+        char k[64];
+        char v[32];
+        snprintf(k, sizeof(k), "/virtual/file_%u.c", (unsigned) (i * 2u + 1u));
+        snprintf(v, sizeof(v), "val=%u", (unsigned) (i * 2u + 1u));
+        e = SnapshotStore_find(&store, k);
+        assert(e != nullptr && SnapEntry_length(e) == strlen(v));
+        assert(memcmp(SnapEntry_data(e), v, strlen(v)) == 0);
+    }
+
+    SnapshotStore_setMaxWorkspaceBytes(&store, SnapshotStore_totalDataBytes(&store) + 16u);
+    assert(!SnapshotStore_put(&store, "/virtual/over_cap.c", "0123456789abcdef0123456789", 26u));
     SnapshotStore_free(&store);
+
+    char txt2Path[320];
+    snprintf(txt2Path, sizeof(txt2Path), "%s/second.c", dir);
+    FILE *tf2 = fopen(txt2Path, "wb");
+    assert(tf2 != nullptr);
+    fwrite("int y = 9;\n", 1, 11, tf2);
+    fclose(tf2);
+
+    SnapshotStore incStore;
+    SnapshotStore_init(&incStore, 1u << 20);
+    assert(SnapshotStore_put(&incStore, txtPath, "live edit\n", 10u));
+    SnapshotSeeder seeder;
+    assert(SnapshotSeeder_begin(&seeder, &incStore, dir, nullptr));
+    u32 steps = 0u;
+    while (SnapshotSeeder_step(&seeder, 1u))
+        steps++;
+    SnapshotSeeder_finish(&seeder);
+    assert(steps >= 1u);
+    assert(SnapshotStore_count(&incStore) == 2u);
+    e = SnapshotStore_find(&incStore, txtPath);
+    assert(e != nullptr && SnapEntry_length(e) == 10u && memcmp(SnapEntry_data(e), "live edit\n", 10u) == 0);
+    e = SnapshotStore_find(&incStore, txt2Path);
+    assert(e != nullptr && SnapEntry_length(e) == 11u);
+    SnapshotStore_free(&incStore);
+
     File_delete(txtPath);
+    File_delete(txt2Path);
     File_delete(binPath);
     Memory_freeAll();
 }
 
-/** Proves DifferenceTui headless push, wide-to-narrow resize reflow, and keybind handling. */
+/** Proves DifferenceTui collapse-by-default, click/key overlays, +/- steppers, horizontal scroll, and Mode-2048 resize. */
 static fn suite_tui() {
     assert(Memory_init(0));
+    i32 pipeFds[2] = { -1, -1 };
+    assert(pipe(pipeFds) == 0);
+
     DifferenceTui tui;
     assert(DifferenceTui_init(&tui, "/tmp/demo", TERMINAL_DIFF_LAYOUT_AUTO, true));
-    tui.outFd = -1;
+    DifferenceTui_setOutputFd(&tui, pipeFds[1]);
+    DifferenceTui_setTrackedFiles(&tui, 42u);
 
     FileWatchEvent ev;
     memset(&ev, 0, sizeof(ev));
@@ -151,28 +226,224 @@ static fn suite_tui() {
     ev.relativePath = "app.c";
     ev.type = FILE_EVENT_MODIFIED;
     ev.epochSeconds = 1763611200LL;
-    ev.fileSize = 32;
+    ev.fileSize = 2048;
 
-    const char *a = "alpha\nhello world\nomega\n";
-    const char *b = "alpha\nhello vexgraph\nomega\n";
+    const char *a = "alpha\nhello world with a very long line of code for horizontal scrolling\nomega\n";
+    const char *b = "alpha\nhello vexgraph with a very long line of code for horizontal scrolling\nomega\n";
     assert(DifferenceTui_pushEdit(&tui, &ev, a, strlen(a), b, strlen(b)));
+    assert(tui.collapseMode == true);
+    assert(tui.records[0].expanded == false);
+    assert(tui.totalAdded == 1u && tui.totalRemoved == 1u);
 
     assert(DifferenceTui_resize(&tui, 130u, 32u));
     DifferenceTui_renderFrame(&tui);
-    assert(tui.totalRows > 0u);
+    assert(tui.totalRows == 1u);
+    assert(TerminalSurface_presentCount(&tui.surface) == 1u);
 
-    assert(DifferenceTui_resize(&tui, 64u, 16u));
-    DifferenceTui_renderFrame(&tui);
-    assert(tui.totalRows > 0u);
+    char outBuf[4096];
+    ssize_t emitted = read(pipeFds[0], outBuf, sizeof(outBuf));
+    assert(emitted > 0);
 
-    DifferenceTui_handleInputByte(&tui, 's');
+    DifferenceTui_setOutputFd(&tui, -1);
+
+    DifferenceTui_handleInputByte(&tui, '\r');
+    assert(tui.records[0].expanded == true);
     DifferenceTui_renderFrame(&tui);
-    DifferenceTui_handleInputByte(&tui, 'k');
+    assert(tui.totalRows > 1u);
+
+    DifferenceTui_handleKeySeq(&tui, "\x1b[C", 3u);
+    assert(TerminalDiffPanel_scrollX(&tui.panel) == 4u);
+    DifferenceTui_handleInputByte(&tui, '0');
+    assert(TerminalDiffPanel_scrollX(&tui.panel) == 0u);
+
+    DifferenceTui_handleKeySeq(&tui, "\x1b[48;24;90;0;0t", 15u);
+    assert(tui.width == 90u && tui.height == 24u);
+
+    DifferenceTui_handleInputByte(&tui, '?');
+    assert(tui.overlay == DIFFERENCE_OVERLAY_HELP);
+    DifferenceTui_renderFrame(&tui);
+    DifferenceTui_handleKeySeq(&tui, "\x1b", 1u);
+    assert(tui.overlay == DIFFERENCE_OVERLAY_NONE);
+
+    DifferenceTui_handleInputByte(&tui, 15);
+    assert(tui.overlay == DIFFERENCE_OVERLAY_SETTINGS);
+    DifferenceTui_renderFrame(&tui);
+    char clickPlus[32];
+    snprintf(clickPlus, sizeof(clickPlus), "\x1b[<0;%zu;%zuM",
+             (size_t) (tui.ctxPlusX0 + 1u), (size_t) (tui.ctxRowY + 1u));
+    for (bytes i = 0u; clickPlus[i]; i++)
+        DifferenceTui_handleInputByte(&tui, (unsigned char) clickPlus[i]);
+    assert(tui.contextLines == 4u);
+    char clickMinus[32];
+    snprintf(clickMinus, sizeof(clickMinus), "\x1b[<0;%zu;%zuM",
+             (size_t) (tui.ctxMinusX0 + 1u), (size_t) (tui.ctxRowY + 1u));
+    for (bytes i = 0u; clickMinus[i]; i++)
+        DifferenceTui_handleInputByte(&tui, (unsigned char) clickMinus[i]);
+    assert(tui.contextLines == 3u);
+    assert(tui.maxEdits == 1024u);
+    assert(tui.workspaceLimitMb == 1024u);
+
+    char clickWs[32];
+    snprintf(clickWs, sizeof(clickWs), "\x1b[<0;%zu;%zuM",
+             (size_t) (tui.wsEditX0 + 1u), (size_t) (tui.wsRowY + 1u));
+    for (bytes i = 0u; clickWs[i]; i++)
+        DifferenceTui_handleInputByte(&tui, (unsigned char) clickWs[i]);
+    assert(tui.editingSetting == 6);
+    DifferenceTui_renderFrame(&tui);
+    DifferenceTui_handleInputByte(&tui, 0x7F);
+    DifferenceTui_handleInputByte(&tui, 0x7F);
+    DifferenceTui_handleInputByte(&tui, 0x7F);
+    DifferenceTui_handleInputByte(&tui, 0x7F);
+    DifferenceTui_handleInputByte(&tui, '5');
+    DifferenceTui_handleInputByte(&tui, '1');
+    DifferenceTui_handleInputByte(&tui, '2');
+    DifferenceTui_handleKeySeq(&tui, "\x1b[D", 3u);
+    DifferenceTui_handleKeySeq(&tui, "\x1b[C", 3u);
+    DifferenceTui_handleInputByte(&tui, '\r');
+    assert(tui.editingSetting == -1);
+    assert(tui.workspaceLimitMb == 512u);
+
+    DifferenceTui_handleInputByte(&tui, 15);
+    assert(tui.overlay == DIFFERENCE_OVERLAY_NONE);
+
+    DifferenceTui_handleKeySeq(&tui, "\x1bo", 2u);
+    assert(tui.collapseMode == false);
+    assert(tui.records[0].expanded == true);
+    DifferenceTui_handleInputByte(&tui, 0xC3);
+    DifferenceTui_handleInputByte(&tui, 0xB8);
+    assert(tui.collapseMode == true);
+    assert(tui.records[0].expanded == false);
+
+    DifferenceTui_setMaxEdits(&tui, 100u);
+    assert(tui.maxEdits == 100u);
+    for (u32 k = 0u; k < 105u; k++)
+        assert(DifferenceTui_pushEdit(&tui, &ev, a, strlen(a), b, strlen(b)));
+    assert(tui.recordCount == 100u);
+    assert(tui.records[0].sequence == 7u);
+    assert(tui.records[99].sequence == 106u);
     DifferenceTui_handleInputByte(&tui, 'G');
+    DifferenceTui_renderFrame(&tui);
+    /* Selected last row uses circle glyph 0x25CF and right-aligned #106, while earlier rows right-align #85 -> " #85 ". */
+    bytes bodyH = tui.height - 2u;
+    bytes firstVisRow = 1u * tui.width;
+    bytes lastVisRow = (1u + bodyH - 1u) * tui.width;
+    assert(tui.backCells[firstVisRow + 2u] == ' ');
+    assert(tui.backCells[firstVisRow + 3u] == '#');
+    assert(tui.backCells[lastVisRow] == 0x25CFu);
+    assert(tui.backCells[lastVisRow + 2u] == '#');
+    assert(tui.backCells[lastVisRow + 3u] == '1');
+    assert(tui.backCells[lastVisRow + 4u] == '0');
+    assert(tui.backCells[lastVisRow + 5u] == '6');
+
     DifferenceTui_handleInputByte(&tui, 'c');
     assert(tui.recordCount == 0u);
+    assert(tui.totalAdded == 0u && tui.totalRemoved == 0u);
 
     DifferenceTui_free(&tui);
+    close(pipeFds[0]);
+    close(pipeFds[1]);
+    Memory_freeAll();
+}
+
+static u32 g_settingsHookCalls = 0u;
+static DifferenceSettings g_lastHookSettings;
+
+/** Captures live TUI setting-change notifications during unit testing. */
+static fn onTestSettingsChanged(const DifferenceSettings *s, any userdata) {
+    (discard) userdata;
+    g_settingsHookCalls++;
+    if (s)
+        g_lastHookSettings = *s;
+}
+
+/** Proves manifest path resolution, atomic save/reload, malformed rejection, and TUI hook wiring. */
+static fn suite_settings() {
+    assert(Memory_init(0));
+    const char *base = getenv("TMPDIR");
+    if (!base || !*base)
+        base = "/tmp";
+    char manifestRoot[256];
+    snprintf(manifestRoot, sizeof(manifestRoot), "%s/vex_diff_manifest_%d", base, getpid());
+    assert(setenv("VEX_MANIFEST", manifestRoot, 1) == 0);
+
+    char resolvedPath[512];
+    assert(DifferenceSettings_resolvePath(resolvedPath, sizeof(resolvedPath)));
+    assert(strstr(resolvedPath, "/vexgraph/difference/settings") != nullptr);
+
+    DifferenceSettings s = DifferenceSettings_0();
+    assert(DifferenceSettings_load(&s, resolvedPath));
+    assert(DifferenceSettings_isCollapseMode(&s) == true);
+    assert(DifferenceSettings_getDiffLayout(&s) == TERMINAL_DIFF_LAYOUT_AUTO);
+    assert(DifferenceSettings_isFollowTail(&s) == true);
+    assert(DifferenceSettings_isColor(&s) == true);
+    assert(DifferenceSettings_isDiffIcons(&s) == true);
+    assert(DifferenceSettings_getContextLines(&s) == 3u);
+    assert(DifferenceSettings_getWorkspaceLimitMb(&s) == 1024u);
+    assert(DifferenceSettings_getMaxEdits(&s) == 1024u);
+
+    DifferenceSettings_setCollapseMode(&s, false);
+    assert(DifferenceSettings_setDiffLayout(&s, TERMINAL_DIFF_LAYOUT_SIDE_BY_SIDE));
+    DifferenceSettings_setFollowTail(&s, false);
+    DifferenceSettings_setColor(&s, false);
+    DifferenceSettings_setDiffIcons(&s, false);
+    assert(DifferenceSettings_setContextLines(&s, 7u));
+    assert(DifferenceSettings_setWorkspaceLimitMb(&s, 512u));
+    assert(DifferenceSettings_setMaxEdits(&s, 400u));
+    assert(DifferenceSettings_save(&s, resolvedPath));
+
+    DifferenceSettings reloaded = DifferenceSettings_0();
+    assert(DifferenceSettings_load(&reloaded, resolvedPath));
+    assert(DifferenceSettings_isCollapseMode(&reloaded) == false);
+    assert(DifferenceSettings_getDiffLayout(&reloaded) == TERMINAL_DIFF_LAYOUT_SIDE_BY_SIDE);
+    assert(DifferenceSettings_isFollowTail(&reloaded) == false);
+    assert(DifferenceSettings_isColor(&reloaded) == false);
+    assert(DifferenceSettings_isDiffIcons(&reloaded) == false);
+    assert(DifferenceSettings_getContextLines(&reloaded) == 7u);
+    assert(DifferenceSettings_getWorkspaceLimitMb(&reloaded) == 512u);
+    assert(DifferenceSettings_getMaxEdits(&reloaded) == 400u);
+
+    char badPath[512];
+    snprintf(badPath, sizeof(badPath), "%s.bad", resolvedPath);
+    FILE *bf = fopen(badPath, "wb");
+    assert(bf != nullptr);
+    fputs("collapse_mode=0\nmax_edits=42\n", bf);
+    fclose(bf);
+    assert(!DifferenceSettings_load(&reloaded, badPath));
+    assert(DifferenceSettings_getMaxEdits(&reloaded) == 400u);
+    unlink(badPath);
+
+    DifferenceTui tui;
+    assert(DifferenceTui_init(&tui, "/tmp/demo", TERMINAL_DIFF_LAYOUT_AUTO, true));
+    DifferenceTui_setOutputFd(&tui, -1);
+    g_settingsHookCalls = 0u;
+    DifferenceTui_setSettingsChangedHook(&tui, onTestSettingsChanged, nullptr);
+    DifferenceTui_applySettings(&tui, &reloaded);
+    assert(g_settingsHookCalls == 0u);
+
+    DifferenceSettings exported;
+    DifferenceTui_exportSettings(&tui, &exported);
+    assert(DifferenceSettings_isCollapseMode(&exported) == false);
+    assert(DifferenceSettings_getDiffLayout(&exported) == TERMINAL_DIFF_LAYOUT_SIDE_BY_SIDE);
+    assert(DifferenceSettings_isFollowTail(&exported) == false);
+    assert(DifferenceSettings_isColor(&exported) == false);
+    assert(DifferenceSettings_isDiffIcons(&exported) == false);
+    assert(DifferenceSettings_getContextLines(&exported) == 7u);
+    assert(DifferenceSettings_getWorkspaceLimitMb(&exported) == 512u);
+    assert(DifferenceSettings_getMaxEdits(&exported) == 400u);
+
+    DifferenceTui_handleInputByte(&tui, 's');
+    assert(g_settingsHookCalls == 1u);
+    assert(DifferenceSettings_getDiffLayout(&g_lastHookSettings) == TERMINAL_DIFF_LAYOUT_UNIFIED);
+    DifferenceTui_handleInputByte(&tui, 'f');
+    assert(g_settingsHookCalls == 2u);
+    assert(DifferenceSettings_isFollowTail(&g_lastHookSettings) == true);
+    DifferenceTui_setMaxEdits(&tui, 300u);
+    assert(g_settingsHookCalls == 3u);
+    assert(DifferenceSettings_getMaxEdits(&g_lastHookSettings) == 300u);
+    assert(DifferenceSettings_save(&g_lastHookSettings, resolvedPath));
+
+    DifferenceTui_free(&tui);
+    unlink(resolvedPath);
     Memory_freeAll();
 }
 
@@ -188,6 +459,7 @@ i32 main(i32 argc, char **argv) {
         { "printer", suite_printer },
         { "snapshot", suite_snapshot },
         { "tui", suite_tui },
+        { "settings", suite_settings },
     };
     const char *filter = argc > 1 ? argv[1] : nullptr;
     bytes ran = 0;
