@@ -1,0 +1,59 @@
+{
+  "application": {
+    "id": "org.vexgraph.vexc.difference",
+    "name": "difference",
+    "displayName": "difference",
+    "version": "0.1.0",
+    "type": "cli",
+    "authors": [
+      "vexgraph"
+    ],
+    "publisher": "vexgraph",
+    "description": "Realtime TUI and scrollable file-watch diff viewer built on re FileEventWatcher and determinant",
+    "license": "MIT",
+    "homepage": "",
+    "icon": ""
+  },
+  "build": {
+    "entry": "main.c",
+    "sources": [
+      "main.c",
+      "diff_engine.c",
+      "difference_printer.c",
+      "difference_tui.c",
+      "snapshot_store.c",
+      "../determinant/ui/panel/terminal_diff_panel.c",
+      "../determinant/ui/surface/terminal_canvas.c",
+      "../determinant/events/terminal_input.c",
+      "../re/io/file/file.c",
+      "../re/io/file/file_event.c",
+      "../re/nio/mem.c",
+      "../re/nio/arena.c",
+      "../re/nio/transient.c",
+      "../re/atomic/spin_lock.c"
+    ],
+    "includes": [
+      ".",
+      "difference",
+      "determinant",
+      "re",
+      "../lib",
+      "../lib/lang"
+    ],
+    "dependencies": [],
+    "defines": [],
+    "options": [
+      "-Wall",
+      "-Wextra"
+    ],
+    "link": "executable"
+  },
+  "payload": {
+    "files": []
+  },
+  "targets": {},
+  "formats": [
+    "portable"
+  ],
+  "statePolicy": "clean"
+}
