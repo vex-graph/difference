@@ -9,6 +9,7 @@
 
 typedef struct DiffResult {
     MemoryArena *arena;
+    bool ownsArena;
     TerminalDiffHunk *hunks;
     bytes hunkCount;
     TerminalDiffLine *lines;
@@ -18,6 +19,12 @@ typedef struct DiffResult {
     u32 linesAdded;
     u32 linesRemoved;
 } DiffResult;
+
+bool DiffEngine_computeIn(MemoryArena *arena, MemoryArena *scratch,
+                          const char *oldText, bytes oldLen,
+                          const char *newText, bytes newLen,
+                          u32 contextLines,
+                          DiffResult *out);
 
 bool DiffEngine_compute(const char *oldText, bytes oldLen,
                         const char *newText, bytes newLen,
