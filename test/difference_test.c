@@ -1,7 +1,10 @@
-// Consolidated automated owner test suite for vex/difference.
-// Usage: difference_test [engine|printer|snapshot]
+/**
+ * Consolidated automated owner test suite for vex/difference.
+ * Usage: difference_test [engine|printer|snapshot]
+ */
 
 #include "vex.h"
+#include "re/primitive/vex-string.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,17 +18,24 @@
 #include "difference/difference_settings.h"
 #include "difference/difference_tui.h"
 #include "difference/snapshot_store.h"
+#include "difference_test.h"
 
 ;;GETTER
-static inline const char *SnapEntry_data(const SnapshotEntry *e) { return (*e).data; }
+static inline string SnapEntry_data(const SnapshotEntry *e)
+{
+    return (*e).data;
+}
 ;;GETTER
-static inline bytes SnapEntry_length(const SnapshotEntry *e) { return (*e).length; }
+static inline bytes SnapEntry_length(const SnapshotEntry *e)
+{
+    return (*e).length;
+}
 
 /** Proves line diffing, hunk grouping, and inline word/letter span detection. */
 static fn suite_engine() {
     assert(Memory_init(0));
-    const char *oldText = "alpha\ni32 count = 10;\nomega\n";
-    const char *newText = "alpha\ni32 total = 10;\nomega\nextra\n";
+    string oldText = "alpha\ni32 count = 10;\nomega\n";
+    string newText = "alpha\ni32 total = 10;\nomega\nextra\n";
 
     DiffResult diff;
     assert(DiffEngine_compute(oldText, strlen(oldText), newText, strlen(newText), 1u, &diff));
@@ -42,8 +52,8 @@ static fn suite_engine() {
     assert(same.hunkCount == 0u && same.linesAdded == 0u && same.linesRemoved == 0u);
     DiffEngine_free(&same);
 
-    const char *nlOld = "alpha\nomega\n";
-    const char *nlNew = "alpha\n\nomega\n";
+    string nlOld = "alpha\nomega\n";
+    string nlNew = "alpha\n\nomega\n";
     DiffResult nlDiff;
     assert(DiffEngine_compute(nlOld, strlen(nlOld), nlNew, strlen(nlNew), 1u, &nlDiff));
     assert(nlDiff.linesAdded == 1u && nlDiff.linesRemoved == 0u);
@@ -64,8 +74,8 @@ static fn suite_engine() {
 /** Proves DifferencePrinter custom header, responsive split vs unified modes, and +/- stat bar. */
 static fn suite_printer() {
     assert(Memory_init(0));
-    const char *oldText = "line one\nhello world\nline three\n";
-    const char *newText = "line one\nhello vexgraph\nline three\n";
+    string oldText = "line one\nhello world\nline three\n";
+    string newText = "line one\nhello vexgraph\nline three\n";
 
     DiffResult diff;
     assert(DiffEngine_compute(oldText, strlen(oldText), newText, strlen(newText), 2u, &diff));
@@ -82,28 +92,28 @@ static fn suite_printer() {
     DifferencePrinter_init(&printer);
     DifferencePrinter_setColor(&printer, false);
 
-    char wideBuf[4096];
+    utf8 wideBuf[4096];
     memset(wideBuf, 0, sizeof(wideBuf));
     FILE *wideOut = fmemopen(wideBuf, sizeof(wideBuf) - 1u, "wb");
     assert(wideOut != nullptr);
     DifferencePrinter_setColumns(&printer, 120u);
     assert(DifferencePrinter_print(&printer, &ev, &diff, wideOut));
     fclose(wideOut);
-    assert(strstr(wideBuf, "#1 ") != nullptr);
-    assert(strstr(wideBuf, " EDIT ") != nullptr);
-    assert(strstr(wideBuf, "hello.c") != nullptr);
-    assert(strstr(wideBuf, "+1 -1") != nullptr);
-    assert(strstr(wideBuf, "[side-by-side 120c]") != nullptr);
+    assert(string_contains(wideBuf, "#1 "));
+    assert(string_contains(wideBuf, " EDIT "));
+    assert(string_contains(wideBuf, "hello.c"));
+    assert(string_contains(wideBuf, "+1 -1"));
+    assert(string_contains(wideBuf, "[side-by-side 120c]"));
 
-    char narrowBuf[4096];
+    utf8 narrowBuf[4096];
     memset(narrowBuf, 0, sizeof(narrowBuf));
     FILE *narrowOut = fmemopen(narrowBuf, sizeof(narrowBuf) - 1u, "wb");
     assert(narrowOut != nullptr);
     DifferencePrinter_setColumns(&printer, 72u);
     assert(DifferencePrinter_print(&printer, &ev, &diff, narrowOut));
     fclose(narrowOut);
-    assert(strstr(narrowBuf, "#2 ") != nullptr);
-    assert(strstr(narrowBuf, "[unified 72c]") != nullptr);
+    assert(string_contains(narrowBuf, "#2 "));
+    assert(string_contains(narrowBuf, "[unified 72c]"));
 
     DiffEngine_free(&diff);
     Memory_freeAll();
@@ -112,16 +122,16 @@ static fn suite_printer() {
 /** Proves SnapshotStore seeding, lookup, update, binary skip, and removal. */
 static fn suite_snapshot() {
     assert(Memory_init(0));
-    const char *base = getenv("TMPDIR");
+    string base = getenv("TMPDIR");
     if (!base || !*base)
         base = "/tmp";
-    char dir[256];
+    utf8 dir[256];
     snprintf(dir, sizeof(dir), "%s/vex_diff_snap_%d", base, getpid());
     File_delete(dir);
     assert(File_mkdirs(dir));
 
-    char txtPath[320];
-    char binPath[320];
+    utf8 txtPath[320];
+    utf8 binPath[320];
     snprintf(txtPath, sizeof(txtPath), "%s/sample.c", dir);
     snprintf(binPath, sizeof(binPath), "%s/blob.bin", dir);
 
@@ -151,23 +161,23 @@ static fn suite_snapshot() {
     assert(SnapshotStore_count(&store) == 0u);
 
     for (u32 i = 0u; i < 300u; i++) {
-        char k[64];
-        char v[32];
+        utf8 k[64];
+        utf8 v[32];
         snprintf(k, sizeof(k), "/virtual/file_%u.c", (unsigned) i);
         snprintf(v, sizeof(v), "val=%u", (unsigned) i);
         assert(SnapshotStore_put(&store, k, v, strlen(v)));
     }
     assert(SnapshotStore_count(&store) == 300u);
     for (u32 i = 0u; i < 150u; i++) {
-        char k[64];
+        utf8 k[64];
         snprintf(k, sizeof(k), "/virtual/file_%u.c", (unsigned) (i * 2u));
         assert(SnapshotStore_remove(&store, k));
         assert(SnapshotStore_find(&store, k) == nullptr);
     }
     assert(SnapshotStore_count(&store) == 150u);
     for (u32 i = 0u; i < 150u; i++) {
-        char k[64];
-        char v[32];
+        utf8 k[64];
+        utf8 v[32];
         snprintf(k, sizeof(k), "/virtual/file_%u.c", (unsigned) (i * 2u + 1u));
         snprintf(v, sizeof(v), "val=%u", (unsigned) (i * 2u + 1u));
         e = SnapshotStore_find(&store, k);
@@ -179,7 +189,7 @@ static fn suite_snapshot() {
     assert(!SnapshotStore_put(&store, "/virtual/over_cap.c", "0123456789abcdef0123456789", 26u));
     SnapshotStore_free(&store);
 
-    char txt2Path[320];
+    utf8 txt2Path[320];
     snprintf(txt2Path, sizeof(txt2Path), "%s/second.c", dir);
     FILE *tf2 = fopen(txt2Path, "wb");
     assert(tf2 != nullptr);
@@ -228,8 +238,8 @@ static fn suite_tui() {
     ev.epochSeconds = 1763611200LL;
     ev.fileSize = 2048;
 
-    const char *a = "alpha\nhello world with a very long line of code for horizontal scrolling\nomega\n";
-    const char *b = "alpha\nhello vexgraph with a very long line of code for horizontal scrolling\nomega\n";
+    string a = "alpha\nhello world with a very long line of code for horizontal scrolling\nomega\n";
+    string b = "alpha\nhello vexgraph with a very long line of code for horizontal scrolling\nomega\n";
     assert(DifferenceTui_pushEdit(&tui, &ev, a, strlen(a), b, strlen(b)));
     assert(tui.collapseMode == true);
     assert(tui.records[0].expanded == false);
@@ -240,8 +250,8 @@ static fn suite_tui() {
     assert(tui.totalRows == 1u);
     assert(TerminalSurface_presentCount(&tui.surface) == 1u);
 
-    char outBuf[4096];
-    ssize_t emitted = read(pipeFds[0], outBuf, sizeof(outBuf));
+    utf8 outBuf[4096];
+    i64 emitted = read(pipeFds[0], outBuf, sizeof(outBuf));
     assert(emitted > 0);
 
     DifferenceTui_setOutputFd(&tui, -1);
@@ -268,26 +278,26 @@ static fn suite_tui() {
     DifferenceTui_handleInputByte(&tui, 15);
     assert(tui.overlay == DIFFERENCE_OVERLAY_SETTINGS);
     DifferenceTui_renderFrame(&tui);
-    char clickPlus[32];
+    utf8 clickPlus[32];
     snprintf(clickPlus, sizeof(clickPlus), "\x1b[<0;%zu;%zuM",
              (size_t) (tui.ctxPlusX0 + 1u), (size_t) (tui.ctxRowY + 1u));
     for (bytes i = 0u; clickPlus[i]; i++)
-        DifferenceTui_handleInputByte(&tui, (unsigned char) clickPlus[i]);
+        DifferenceTui_handleInputByte(&tui, (u8) clickPlus[i]);
     assert(tui.contextLines == 4u);
-    char clickMinus[32];
+    utf8 clickMinus[32];
     snprintf(clickMinus, sizeof(clickMinus), "\x1b[<0;%zu;%zuM",
              (size_t) (tui.ctxMinusX0 + 1u), (size_t) (tui.ctxRowY + 1u));
     for (bytes i = 0u; clickMinus[i]; i++)
-        DifferenceTui_handleInputByte(&tui, (unsigned char) clickMinus[i]);
+        DifferenceTui_handleInputByte(&tui, (u8) clickMinus[i]);
     assert(tui.contextLines == 3u);
     assert(tui.maxEdits == 1024u);
     assert(tui.workspaceLimitMb == 1024u);
 
-    char clickWs[32];
+    utf8 clickWs[32];
     snprintf(clickWs, sizeof(clickWs), "\x1b[<0;%zu;%zuM",
              (size_t) (tui.wsEditX0 + 1u), (size_t) (tui.wsRowY + 1u));
     for (bytes i = 0u; clickWs[i]; i++)
-        DifferenceTui_handleInputByte(&tui, (unsigned char) clickWs[i]);
+        DifferenceTui_handleInputByte(&tui, (u8) clickWs[i]);
     assert(tui.editingSetting == 6);
     DifferenceTui_renderFrame(&tui);
     DifferenceTui_handleInputByte(&tui, 0x7F);
@@ -323,7 +333,6 @@ static fn suite_tui() {
     assert(tui.records[99].sequence == 106u);
     DifferenceTui_handleInputByte(&tui, 'G');
     DifferenceTui_renderFrame(&tui);
-    /* Selected last row uses circle glyph 0x25CF and right-aligned #106, while earlier rows right-align #85 -> " #85 ". */
     bytes bodyH = tui.height - 2u;
     bytes firstVisRow = 1u * tui.width;
     bytes lastVisRow = (1u + bodyH - 1u) * tui.width;
@@ -359,16 +368,16 @@ static fn onTestSettingsChanged(const DifferenceSettings *s, any userdata) {
 /** Proves manifest path resolution, atomic save/reload, malformed rejection, and TUI hook wiring. */
 static fn suite_settings() {
     assert(Memory_init(0));
-    const char *base = getenv("TMPDIR");
+    string base = getenv("TMPDIR");
     if (!base || !*base)
         base = "/tmp";
-    char manifestRoot[256];
+    utf8 manifestRoot[256];
     snprintf(manifestRoot, sizeof(manifestRoot), "%s/vex_diff_manifest_%d", base, getpid());
     assert(setenv("VEX_MANIFEST", manifestRoot, 1) == 0);
 
-    char resolvedPath[512];
+    utf8 resolvedPath[512];
     assert(DifferenceSettings_resolvePath(resolvedPath, sizeof(resolvedPath)));
-    assert(strstr(resolvedPath, "/vexgraph/difference/settings") != nullptr);
+    assert(string_contains(resolvedPath, "/vexgraph/difference/settings"));
 
     DifferenceSettings s = DifferenceSettings_0();
     assert(DifferenceSettings_load(&s, resolvedPath));
@@ -402,7 +411,7 @@ static fn suite_settings() {
     assert(DifferenceSettings_getWorkspaceLimitMb(&reloaded) == 512u);
     assert(DifferenceSettings_getMaxEdits(&reloaded) == 400u);
 
-    char badPath[512];
+    utf8 badPath[512];
     snprintf(badPath, sizeof(badPath), "%s.bad", resolvedPath);
     FILE *bf = fopen(badPath, "wb");
     assert(bf != nullptr);
@@ -447,13 +456,10 @@ static fn suite_settings() {
     Memory_freeAll();
 }
 
-typedef struct SuiteEntry {
-    const char *name;
-    fn (*run)();
-} SuiteEntry;
+
 
 /** Runs all automated vex/difference suites or a single named suite. */
-i32 main(i32 argc, char **argv) {
+i32 main(i32 argc, utf8 **argv) {
     const SuiteEntry suites[] = {
         { "engine", suite_engine },
         { "printer", suite_printer },
@@ -461,17 +467,17 @@ i32 main(i32 argc, char **argv) {
         { "tui", suite_tui },
         { "settings", suite_settings },
     };
-    const char *filter = argc > 1 ? argv[1] : nullptr;
+    string filter = argc > 1 ? argv[1] : nullptr;
     bytes ran = 0;
 
     for (bytes i = 0; i < sizeof(suites) / sizeof(suites[0]); i++) {
-        if (filter && strcmp(filter, suites[i].name) != 0)
+        if (filter && !string_equals(filter, suites[i].name))
             continue;
         suites[i].run();
         ran++;
     }
     if (filter && ran == 0) {
-        fprintf(stderr, "difference_test: unknown suite '%s'\n", filter);
+        fprint(stderr, "difference_test: unknown suite '", filter, "'");
         return 2;
     }
     puts("difference_test: PASS");
