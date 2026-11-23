@@ -14,8 +14,9 @@
 
 #include "type/re_type.h"
 
-;;DEFINITION
 #define TYPE_DIFFERENCE_TUI Type_make(PROJ_RELATIONAL_ENGINE, FORM_SINGLETON, 42u)
+
+;;DEFINITION
 /**
  * ============================================================================
  * DEFINITION: DifferenceTui
@@ -60,311 +61,782 @@ static atomic_bool g_tuiStop = false;
 static atomic_bool g_tuiResized = false;
 
 ;;GETTER
-static inline MemoryArena *Tui_frameArena(const DifferenceTui *t) { return (*t).frameArena; }
+static inline MemoryArena *Tui_frameArena(const DifferenceTui *t)
+{
+    return (*t).frameArena;
+}
 ;;SETTER
-static inline fn Tui_setFrameArena(DifferenceTui *t, MemoryArena *a) { (*t).frameArena = a; }
+static inline fn Tui_setFrameArena(DifferenceTui *t, MemoryArena *a)
+{
+    (*t).frameArena = a;
+}
 ;;GETTER
-static inline MemoryArena *Tui_recordArena(const DifferenceTui *t) { return (*t).recordArena; }
+static inline MemoryArena *Tui_recordArena(const DifferenceTui *t)
+{
+    return (*t).recordArena;
+}
 ;;SETTER
-static inline fn Tui_setRecordArena(DifferenceTui *t, MemoryArena *a) { (*t).recordArena = a; }
+static inline fn Tui_setRecordArena(DifferenceTui *t, MemoryArena *a)
+{
+    (*t).recordArena = a;
+}
 ;;GETTER
-static inline MemoryArena *Tui_diffScratch(const DifferenceTui *t) { return (*t).diffScratch; }
+static inline MemoryArena *Tui_diffScratch(const DifferenceTui *t)
+{
+    return (*t).diffScratch;
+}
 ;;SETTER
-static inline fn Tui_setDiffScratch(DifferenceTui *t, MemoryArena *a) { (*t).diffScratch = a; }
+static inline fn Tui_setDiffScratch(DifferenceTui *t, MemoryArena *a)
+{
+    (*t).diffScratch = a;
+}
 ;;GETTER
-static inline TerminalSurface *Tui_surfaceMut(DifferenceTui *t) { return &(*t).surface; }
+static inline TerminalSurface *Tui_surfaceMut(DifferenceTui *t)
+{
+    return &(*t).surface;
+}
 ;;GETTER
-static inline TerminalCompositor *Tui_compositor(const DifferenceTui *t) { return (*t).compositor; }
+static inline TerminalCompositor *Tui_compositor(const DifferenceTui *t)
+{
+    return (*t).compositor;
+}
 ;;SETTER
-static inline fn Tui_setCompositor(DifferenceTui *t, TerminalCompositor *c) { (*t).compositor = c; }
+static inline fn Tui_setCompositor(DifferenceTui *t, TerminalCompositor *c)
+{
+    (*t).compositor = c;
+}
 ;;GETTER
-static inline TerminalInput *Tui_inputMut(DifferenceTui *t) { return &(*t).input; }
+static inline TerminalInput *Tui_inputMut(DifferenceTui *t)
+{
+    return &(*t).input;
+}
 ;;GETTER
-static inline TerminalDiffPanel *Tui_panelMut(DifferenceTui *t) { return &(*t).panel; }
+static inline TerminalDiffPanel *Tui_panelMut(DifferenceTui *t)
+{
+    return &(*t).panel;
+}
 ;;GETTER
-static inline TerminalTextArea *Tui_editField(const DifferenceTui *t) { return (*t).editField; }
-;;SETTER
-static inline fn Tui_setEditField(DifferenceTui *t, TerminalTextArea *f) { (*t).editField = f; }
+static inline const TerminalDiffPanel *Tui_panel(const DifferenceTui *t)
+{
+    return &(*t).panel;
+}
 ;;GETTER
-static inline char *Tui_editBufMut(DifferenceTui *t) { return (*t).editBuf; }
+static inline TerminalTextArea *Tui_editField(const DifferenceTui *t)
+{
+    return (*t).editField;
+}
+;;SETTER
+static inline fn Tui_setEditField(DifferenceTui *t, TerminalTextArea *f)
+{
+    (*t).editField = f;
+}
 ;;GETTER
-static inline i32 Tui_editingSetting(const DifferenceTui *t) { return (*t).editingSetting; }
-;;SETTER
-static inline fn Tui_setEditingSetting(DifferenceTui *t, i32 s) { (*t).editingSetting = s; }
+static inline utf8 *Tui_editBufMut(DifferenceTui *t)
+{
+    return (*t).editBuf;
+}
 ;;GETTER
-static inline i32 Tui_outFd(const DifferenceTui *t) { return (*t).outFd; }
+static inline bytes Tui_editBufCap(const DifferenceTui *t)
+{
+    return sizeof((*t).editBuf);
+}
 ;;SETTER
-static inline fn Tui_setOutFd(DifferenceTui *t, i32 fd) { (*t).outFd = fd; }
+static inline fn TextArea_setCursorPen(TerminalTextArea *f, TerminalPen pen)
+{
+    (*f).cursorPen = pen;
+}
 ;;GETTER
-static inline bytes Tui_width(const DifferenceTui *t) { return (*t).width; }
+static inline i32 Tui_editingSetting(const DifferenceTui *t)
+{
+    return (*t).editingSetting;
+}
 ;;SETTER
-static inline fn Tui_setWidth(DifferenceTui *t, bytes w) { (*t).width = w; }
+static inline fn Tui_setEditingSetting(DifferenceTui *t, i32 s)
+{
+    (*t).editingSetting = s;
+}
 ;;GETTER
-static inline bytes Tui_height(const DifferenceTui *t) { return (*t).height; }
+static inline i32 Tui_outFd(const DifferenceTui *t)
+{
+    return (*t).outFd;
+}
 ;;SETTER
-static inline fn Tui_setHeight(DifferenceTui *t, bytes h) { (*t).height = h; }
-;;SETTER
-static inline fn Tui_setBackCells(DifferenceTui *t, u32 *p) { (*t).backCells = p; }
-;;SETTER
-static inline fn Tui_setBackStyles(DifferenceTui *t, u16 *p) { (*t).backStyles = p; }
-;;SETTER
-static inline fn Tui_setBackFg(DifferenceTui *t, u32 *p) { (*t).backFg = p; }
-;;SETTER
-static inline fn Tui_setBackBg(DifferenceTui *t, u32 *p) { (*t).backBg = p; }
-;;SETTER
-static inline fn Tui_setFrontCells(DifferenceTui *t, u32 *p) { (*t).frontCells = p; }
-;;SETTER
-static inline fn Tui_setFrontStyles(DifferenceTui *t, u16 *p) { (*t).frontStyles = p; }
-;;SETTER
-static inline fn Tui_setFrontFg(DifferenceTui *t, u32 *p) { (*t).frontFg = p; }
-;;SETTER
-static inline fn Tui_setFrontBg(DifferenceTui *t, u32 *p) { (*t).frontBg = p; }
+static inline fn Tui_setOutFd(DifferenceTui *t, i32 fd)
+{
+    (*t).outFd = fd;
+}
 ;;GETTER
-static inline const char *Tui_watchRoot(const DifferenceTui *t) { return (*t).watchRoot; }
+static inline bytes Tui_width(const DifferenceTui *t)
+{
+    return (*t).width;
+}
 ;;SETTER
-static inline fn Tui_setWatchRoot(DifferenceTui *t, const char *r) { (*t).watchRoot = r; }
+static inline fn Tui_setWidth(DifferenceTui *t, bytes w)
+{
+    (*t).width = w;
+}
 ;;GETTER
-static inline bytes Tui_trackedFiles(const DifferenceTui *t) { return (*t).trackedFiles; }
+static inline bytes Tui_height(const DifferenceTui *t)
+{
+    return (*t).height;
+}
 ;;SETTER
-static inline fn Tui_setTrackedFiles(DifferenceTui *t, bytes n) { (*t).trackedFiles = n; }
-;;GETTER
-static inline u64 Tui_editSeq(const DifferenceTui *t) { return (*t).editSequence; }
+static inline fn Tui_setHeight(DifferenceTui *t, bytes h)
+{
+    (*t).height = h;
+}
 ;;SETTER
-static inline fn Tui_setEditSeq(DifferenceTui *t, u64 s) { (*t).editSequence = s; }
-;;GETTER
-static inline u64 Tui_totalAdded(const DifferenceTui *t) { return (*t).totalAdded; }
+static inline fn Tui_setBackCells(DifferenceTui *t, u32 *p)
+{
+    (*t).backCells = p;
+}
 ;;SETTER
-static inline fn Tui_setTotalAdded(DifferenceTui *t, u64 n) { (*t).totalAdded = n; }
-;;GETTER
-static inline u64 Tui_totalRemoved(const DifferenceTui *t) { return (*t).totalRemoved; }
+static inline fn Tui_setBackStyles(DifferenceTui *t, u16 *p)
+{
+    (*t).backStyles = p;
+}
 ;;SETTER
-static inline fn Tui_setTotalRemoved(DifferenceTui *t, u64 n) { (*t).totalRemoved = n; }
-;;GETTER
-static inline DifferenceEditRecord *Tui_recordsMut(DifferenceTui *t) { return (*t).records; }
-;;GETTER
-static inline bytes Tui_recordCount(const DifferenceTui *t) { return (*t).recordCount; }
+static inline fn Tui_setBackFg(DifferenceTui *t, u32 *p)
+{
+    (*t).backFg = p;
+}
 ;;SETTER
-static inline fn Tui_setRecordCount(DifferenceTui *t, bytes n) { (*t).recordCount = n; }
-;;GETTER
-static inline u32 Tui_maxEdits(const DifferenceTui *t) { return (*t).maxEdits; }
+static inline fn Tui_setBackBg(DifferenceTui *t, u32 *p)
+{
+    (*t).backBg = p;
+}
 ;;SETTER
-static inline fn Tui_setMaxEditsField(DifferenceTui *t, u32 m) { (*t).maxEdits = m; }
-;;GETTER
-static inline u32 Tui_workspaceLimitMb(const DifferenceTui *t) { return (*t).workspaceLimitMb; }
+static inline fn Tui_setFrontCells(DifferenceTui *t, u32 *p)
+{
+    (*t).frontCells = p;
+}
 ;;SETTER
-static inline fn Tui_setWorkspaceLimitMbField(DifferenceTui *t, u32 m) { (*t).workspaceLimitMb = m; }
-;;GETTER
-static inline bytes Tui_selectedIndex(const DifferenceTui *t) { return (*t).selectedIndex; }
+static inline fn Tui_setFrontStyles(DifferenceTui *t, u16 *p)
+{
+    (*t).frontStyles = p;
+}
 ;;SETTER
-static inline fn Tui_setSelectedIndex(DifferenceTui *t, bytes i) { (*t).selectedIndex = i; }
-;;GETTER
-static inline bytes Tui_scrollOffset(const DifferenceTui *t) { return (*t).scrollOffset; }
+static inline fn Tui_setFrontFg(DifferenceTui *t, u32 *p)
+{
+    (*t).frontFg = p;
+}
 ;;SETTER
-static inline fn Tui_setScrollOffset(DifferenceTui *t, bytes o) { (*t).scrollOffset = o; }
+static inline fn Tui_setFrontBg(DifferenceTui *t, u32 *p)
+{
+    (*t).frontBg = p;
+}
 ;;GETTER
-static inline bytes Tui_totalRows(const DifferenceTui *t) { return (*t).totalRows; }
+static inline string Tui_watchRoot(const DifferenceTui *t)
+{
+    return (*t).watchRoot;
+}
 ;;SETTER
-static inline fn Tui_setTotalRows(DifferenceTui *t, bytes r) { (*t).totalRows = r; }
+static inline fn Tui_setWatchRoot(DifferenceTui *t, string r)
+{
+    (*t).watchRoot = r;
+}
 ;;GETTER
-static inline bool Tui_collapseMode(const DifferenceTui *t) { return (*t).collapseMode; }
+static inline bytes Tui_trackedFiles(const DifferenceTui *t)
+{
+    return (*t).trackedFiles;
+}
 ;;SETTER
-static inline fn Tui_setCollapseMode(DifferenceTui *t, bool c) { (*t).collapseMode = c; }
+static inline fn Tui_setTrackedFiles(DifferenceTui *t, bytes n)
+{
+    (*t).trackedFiles = n;
+}
 ;;GETTER
-static inline u32 Tui_contextLines(const DifferenceTui *t) { return (*t).contextLines; }
+static inline u64 Tui_editSeq(const DifferenceTui *t)
+{
+    return (*t).editSequence;
+}
 ;;SETTER
-static inline fn Tui_setContextLines(DifferenceTui *t, u32 n) { (*t).contextLines = n; }
+static inline fn Tui_setEditSeq(DifferenceTui *t, u64 s)
+{
+    (*t).editSequence = s;
+}
 ;;GETTER
-static inline DifferenceOverlayMode Tui_overlay(const DifferenceTui *t) { return (*t).overlay; }
+static inline u64 Tui_totalAdded(const DifferenceTui *t)
+{
+    return (*t).totalAdded;
+}
 ;;SETTER
-static inline fn Tui_setOverlay(DifferenceTui *t, DifferenceOverlayMode o) { (*t).overlay = o; }
+static inline fn Tui_setTotalAdded(DifferenceTui *t, u64 n)
+{
+    (*t).totalAdded = n;
+}
 ;;GETTER
-static inline bytes Tui_settingsCursor(const DifferenceTui *t) { return (*t).settingsCursor; }
+static inline u64 Tui_totalRemoved(const DifferenceTui *t)
+{
+    return (*t).totalRemoved;
+}
 ;;SETTER
-static inline fn Tui_setSettingsCursor(DifferenceTui *t, bytes c) { (*t).settingsCursor = c; }
+static inline fn Tui_setTotalRemoved(DifferenceTui *t, u64 n)
+{
+    (*t).totalRemoved = n;
+}
 ;;GETTER
-static inline bool Tui_utf8C3Pending(const DifferenceTui *t) { return (*t).utf8C3Pending; }
-;;SETTER
-static inline fn Tui_setUtf8C3Pending(DifferenceTui *t, bool p) { (*t).utf8C3Pending = p; }
+static inline DifferenceEditRecord *Tui_recordsMut(DifferenceTui *t)
+{
+    return (*t).records;
+}
 ;;GETTER
-static inline bytes Tui_helpBtnX0(const DifferenceTui *t) { return (*t).helpBtnX0; }
+static inline bytes Tui_recordCount(const DifferenceTui *t)
+{
+    return (*t).recordCount;
+}
 ;;SETTER
-static inline fn Tui_setHelpBtnX0(DifferenceTui *t, bytes x) { (*t).helpBtnX0 = x; }
+static inline fn Tui_setRecordCount(DifferenceTui *t, bytes n)
+{
+    (*t).recordCount = n;
+}
 ;;GETTER
-static inline bytes Tui_helpBtnX1(const DifferenceTui *t) { return (*t).helpBtnX1; }
+static inline u32 Tui_maxEdits(const DifferenceTui *t)
+{
+    return (*t).maxEdits;
+}
 ;;SETTER
-static inline fn Tui_setHelpBtnX1(DifferenceTui *t, bytes x) { (*t).helpBtnX1 = x; }
+static inline fn Tui_setMaxEditsField(DifferenceTui *t, u32 m)
+{
+    (*t).maxEdits = m;
+}
 ;;GETTER
-static inline bytes Tui_settingsBtnX0(const DifferenceTui *t) { return (*t).settingsBtnX0; }
+static inline u32 Tui_workspaceLimitMb(const DifferenceTui *t)
+{
+    return (*t).workspaceLimitMb;
+}
 ;;SETTER
-static inline fn Tui_setSettingsBtnX0(DifferenceTui *t, bytes x) { (*t).settingsBtnX0 = x; }
+static inline fn Tui_setWorkspaceLimitMbField(DifferenceTui *t, u32 m)
+{
+    (*t).workspaceLimitMb = m;
+}
 ;;GETTER
-static inline bytes Tui_settingsBtnX1(const DifferenceTui *t) { return (*t).settingsBtnX1; }
+static inline bytes Tui_selectedIndex(const DifferenceTui *t)
+{
+    return (*t).selectedIndex;
+}
 ;;SETTER
-static inline fn Tui_setSettingsBtnX1(DifferenceTui *t, bytes x) { (*t).settingsBtnX1 = x; }
+static inline fn Tui_setSelectedIndex(DifferenceTui *t, bytes i)
+{
+    (*t).selectedIndex = i;
+}
 ;;GETTER
-static inline bytes Tui_modalX(const DifferenceTui *t) { return (*t).modalX; }
+static inline bytes Tui_scrollOffset(const DifferenceTui *t)
+{
+    return (*t).scrollOffset;
+}
 ;;SETTER
-static inline fn Tui_setModalX(DifferenceTui *t, bytes x) { (*t).modalX = x; }
+static inline fn Tui_setScrollOffset(DifferenceTui *t, bytes o)
+{
+    (*t).scrollOffset = o;
+}
 ;;GETTER
-static inline bytes Tui_modalY(const DifferenceTui *t) { return (*t).modalY; }
+static inline bytes Tui_totalRows(const DifferenceTui *t)
+{
+    return (*t).totalRows;
+}
 ;;SETTER
-static inline fn Tui_setModalY(DifferenceTui *t, bytes y) { (*t).modalY = y; }
+static inline fn Tui_setTotalRows(DifferenceTui *t, bytes r)
+{
+    (*t).totalRows = r;
+}
 ;;GETTER
-static inline bytes Tui_modalW(const DifferenceTui *t) { return (*t).modalW; }
+static inline bool Tui_collapseMode(const DifferenceTui *t)
+{
+    return (*t).collapseMode;
+}
 ;;SETTER
-static inline fn Tui_setModalW(DifferenceTui *t, bytes w) { (*t).modalW = w; }
+static inline fn Tui_setCollapseMode(DifferenceTui *t, bool c)
+{
+    (*t).collapseMode = c;
+}
 ;;GETTER
-static inline bytes Tui_modalH(const DifferenceTui *t) { return (*t).modalH; }
+static inline u32 Tui_contextLines(const DifferenceTui *t)
+{
+    return (*t).contextLines;
+}
 ;;SETTER
-static inline fn Tui_setModalH(DifferenceTui *t, bytes h) { (*t).modalH = h; }
+static inline fn Tui_setContextLines(DifferenceTui *t, u32 n)
+{
+    (*t).contextLines = n;
+}
 ;;GETTER
-static inline bytes Tui_modalCloseX0(const DifferenceTui *t) { return (*t).modalCloseX0; }
+static inline DifferenceOverlayMode Tui_overlay(const DifferenceTui *t)
+{
+    return (*t).overlay;
+}
 ;;SETTER
-static inline fn Tui_setModalCloseX0(DifferenceTui *t, bytes x) { (*t).modalCloseX0 = x; }
+static inline fn Tui_setOverlay(DifferenceTui *t, DifferenceOverlayMode o)
+{
+    (*t).overlay = o;
+}
 ;;GETTER
-static inline bytes Tui_modalCloseX1(const DifferenceTui *t) { return (*t).modalCloseX1; }
+static inline bytes Tui_settingsCursor(const DifferenceTui *t)
+{
+    return (*t).settingsCursor;
+}
 ;;SETTER
-static inline fn Tui_setModalCloseX1(DifferenceTui *t, bytes x) { (*t).modalCloseX1 = x; }
+static inline fn Tui_setSettingsCursor(DifferenceTui *t, bytes c)
+{
+    (*t).settingsCursor = c;
+}
 ;;GETTER
-static inline bytes Tui_ctxMinusX0(const DifferenceTui *t) { return (*t).ctxMinusX0; }
+static inline bool Tui_utf8C3Pending(const DifferenceTui *t)
+{
+    return (*t).utf8C3Pending;
+}
 ;;SETTER
-static inline fn Tui_setCtxMinusX0(DifferenceTui *t, bytes x) { (*t).ctxMinusX0 = x; }
+static inline fn Tui_setUtf8C3Pending(DifferenceTui *t, bool p)
+{
+    (*t).utf8C3Pending = p;
+}
 ;;GETTER
-static inline bytes Tui_ctxMinusX1(const DifferenceTui *t) { return (*t).ctxMinusX1; }
+static inline bytes Tui_helpBtnX0(const DifferenceTui *t)
+{
+    return (*t).helpBtnX0;
+}
 ;;SETTER
-static inline fn Tui_setCtxMinusX1(DifferenceTui *t, bytes x) { (*t).ctxMinusX1 = x; }
+static inline fn Tui_setHelpBtnX0(DifferenceTui *t, bytes x)
+{
+    (*t).helpBtnX0 = x;
+}
 ;;GETTER
-static inline bytes Tui_ctxPlusX0(const DifferenceTui *t) { return (*t).ctxPlusX0; }
+static inline bytes Tui_helpBtnX1(const DifferenceTui *t)
+{
+    return (*t).helpBtnX1;
+}
 ;;SETTER
-static inline fn Tui_setCtxPlusX0(DifferenceTui *t, bytes x) { (*t).ctxPlusX0 = x; }
+static inline fn Tui_setHelpBtnX1(DifferenceTui *t, bytes x)
+{
+    (*t).helpBtnX1 = x;
+}
 ;;GETTER
-static inline bytes Tui_ctxPlusX1(const DifferenceTui *t) { return (*t).ctxPlusX1; }
+static inline bytes Tui_settingsBtnX0(const DifferenceTui *t)
+{
+    return (*t).settingsBtnX0;
+}
 ;;SETTER
-static inline fn Tui_setCtxPlusX1(DifferenceTui *t, bytes x) { (*t).ctxPlusX1 = x; }
+static inline fn Tui_setSettingsBtnX0(DifferenceTui *t, bytes x)
+{
+    (*t).settingsBtnX0 = x;
+}
 ;;GETTER
-static inline bytes Tui_ctxRowY(const DifferenceTui *t) { return (*t).ctxRowY; }
+static inline bytes Tui_settingsBtnX1(const DifferenceTui *t)
+{
+    return (*t).settingsBtnX1;
+}
 ;;SETTER
-static inline fn Tui_setCtxRowY(DifferenceTui *t, bytes y) { (*t).ctxRowY = y; }
+static inline fn Tui_setSettingsBtnX1(DifferenceTui *t, bytes x)
+{
+    (*t).settingsBtnX1 = x;
+}
 ;;GETTER
-static inline bytes Tui_wsEditX0(const DifferenceTui *t) { return (*t).wsEditX0; }
+static inline bytes Tui_modalX(const DifferenceTui *t)
+{
+    return (*t).modalX;
+}
 ;;SETTER
-static inline fn Tui_setWsEditX0(DifferenceTui *t, bytes x) { (*t).wsEditX0 = x; }
+static inline fn Tui_setModalX(DifferenceTui *t, bytes x)
+{
+    (*t).modalX = x;
+}
 ;;GETTER
-static inline bytes Tui_wsEditX1(const DifferenceTui *t) { return (*t).wsEditX1; }
+static inline bytes Tui_modalY(const DifferenceTui *t)
+{
+    return (*t).modalY;
+}
 ;;SETTER
-static inline fn Tui_setWsEditX1(DifferenceTui *t, bytes x) { (*t).wsEditX1 = x; }
+static inline fn Tui_setModalY(DifferenceTui *t, bytes y)
+{
+    (*t).modalY = y;
+}
 ;;GETTER
-static inline bytes Tui_wsRowY(const DifferenceTui *t) { return (*t).wsRowY; }
+static inline bytes Tui_modalW(const DifferenceTui *t)
+{
+    return (*t).modalW;
+}
 ;;SETTER
-static inline fn Tui_setWsRowY(DifferenceTui *t, bytes y) { (*t).wsRowY = y; }
+static inline fn Tui_setModalW(DifferenceTui *t, bytes w)
+{
+    (*t).modalW = w;
+}
 ;;GETTER
-static inline bytes Tui_wsFieldX0(const DifferenceTui *t) { return (*t).wsFieldX0; }
+static inline bytes Tui_modalH(const DifferenceTui *t)
+{
+    return (*t).modalH;
+}
 ;;SETTER
-static inline fn Tui_setWsFieldX0(DifferenceTui *t, bytes x) { (*t).wsFieldX0 = x; }
+static inline fn Tui_setModalH(DifferenceTui *t, bytes h)
+{
+    (*t).modalH = h;
+}
 ;;GETTER
-static inline bytes Tui_wsFieldX1(const DifferenceTui *t) { return (*t).wsFieldX1; }
+static inline bytes Tui_modalCloseX0(const DifferenceTui *t)
+{
+    return (*t).modalCloseX0;
+}
 ;;SETTER
-static inline fn Tui_setWsFieldX1(DifferenceTui *t, bytes x) { (*t).wsFieldX1 = x; }
+static inline fn Tui_setModalCloseX0(DifferenceTui *t, bytes x)
+{
+    (*t).modalCloseX0 = x;
+}
 ;;GETTER
-static inline bytes Tui_editsEditX0(const DifferenceTui *t) { return (*t).editsEditX0; }
+static inline bytes Tui_modalCloseX1(const DifferenceTui *t)
+{
+    return (*t).modalCloseX1;
+}
 ;;SETTER
-static inline fn Tui_setEditsEditX0(DifferenceTui *t, bytes x) { (*t).editsEditX0 = x; }
+static inline fn Tui_setModalCloseX1(DifferenceTui *t, bytes x)
+{
+    (*t).modalCloseX1 = x;
+}
 ;;GETTER
-static inline bytes Tui_editsEditX1(const DifferenceTui *t) { return (*t).editsEditX1; }
+static inline bytes Tui_ctxMinusX0(const DifferenceTui *t)
+{
+    return (*t).ctxMinusX0;
+}
 ;;SETTER
-static inline fn Tui_setEditsEditX1(DifferenceTui *t, bytes x) { (*t).editsEditX1 = x; }
+static inline fn Tui_setCtxMinusX0(DifferenceTui *t, bytes x)
+{
+    (*t).ctxMinusX0 = x;
+}
 ;;GETTER
-static inline bytes Tui_editsRowY(const DifferenceTui *t) { return (*t).editsRowY; }
+static inline bytes Tui_ctxMinusX1(const DifferenceTui *t)
+{
+    return (*t).ctxMinusX1;
+}
 ;;SETTER
-static inline fn Tui_setEditsRowY(DifferenceTui *t, bytes y) { (*t).editsRowY = y; }
+static inline fn Tui_setCtxMinusX1(DifferenceTui *t, bytes x)
+{
+    (*t).ctxMinusX1 = x;
+}
 ;;GETTER
-static inline bytes Tui_editsFieldX0(const DifferenceTui *t) { return (*t).editsFieldX0; }
+static inline bytes Tui_ctxPlusX0(const DifferenceTui *t)
+{
+    return (*t).ctxPlusX0;
+}
 ;;SETTER
-static inline fn Tui_setEditsFieldX0(DifferenceTui *t, bytes x) { (*t).editsFieldX0 = x; }
+static inline fn Tui_setCtxPlusX0(DifferenceTui *t, bytes x)
+{
+    (*t).ctxPlusX0 = x;
+}
 ;;GETTER
-static inline bytes Tui_editsFieldX1(const DifferenceTui *t) { return (*t).editsFieldX1; }
+static inline bytes Tui_ctxPlusX1(const DifferenceTui *t)
+{
+    return (*t).ctxPlusX1;
+}
 ;;SETTER
-static inline fn Tui_setEditsFieldX1(DifferenceTui *t, bytes x) { (*t).editsFieldX1 = x; }
+static inline fn Tui_setCtxPlusX1(DifferenceTui *t, bytes x)
+{
+    (*t).ctxPlusX1 = x;
+}
 ;;GETTER
-static inline bool Tui_followTail(const DifferenceTui *t) { return (*t).followTail; }
+static inline bytes Tui_ctxRowY(const DifferenceTui *t)
+{
+    return (*t).ctxRowY;
+}
 ;;SETTER
-static inline fn Tui_setFollowTail(DifferenceTui *t, bool f) { (*t).followTail = f; }
+static inline fn Tui_setCtxRowY(DifferenceTui *t, bytes y)
+{
+    (*t).ctxRowY = y;
+}
 ;;GETTER
-static inline bool Tui_dirty(const DifferenceTui *t) { return (*t).dirty; }
+static inline bytes Tui_wsEditX0(const DifferenceTui *t)
+{
+    return (*t).wsEditX0;
+}
 ;;SETTER
-static inline fn Tui_setDirty(DifferenceTui *t, bool d) { (*t).dirty = d; }
+static inline fn Tui_setWsEditX0(DifferenceTui *t, bytes x)
+{
+    (*t).wsEditX0 = x;
+}
 ;;GETTER
-static inline bool Tui_running(const DifferenceTui *t) { return (*t).running; }
+static inline bytes Tui_wsEditX1(const DifferenceTui *t)
+{
+    return (*t).wsEditX1;
+}
 ;;SETTER
-static inline fn Tui_setRunning(DifferenceTui *t, bool r) { (*t).running = r; }
+static inline fn Tui_setWsEditX1(DifferenceTui *t, bytes x)
+{
+    (*t).wsEditX1 = x;
+}
 ;;GETTER
-static inline DifferenceTuiIdleFn Tui_idleHook(const DifferenceTui *t) { return (*t).idleHook; }
+static inline bytes Tui_wsRowY(const DifferenceTui *t)
+{
+    return (*t).wsRowY;
+}
 ;;SETTER
-static inline fn Tui_setIdleHookField(DifferenceTui *t, DifferenceTuiIdleFn h) { (*t).idleHook = h; }
+static inline fn Tui_setWsRowY(DifferenceTui *t, bytes y)
+{
+    (*t).wsRowY = y;
+}
 ;;GETTER
-static inline any Tui_idleUserdata(const DifferenceTui *t) { return (*t).idleUserdata; }
+static inline bytes Tui_wsFieldX0(const DifferenceTui *t)
+{
+    return (*t).wsFieldX0;
+}
 ;;SETTER
-static inline fn Tui_setIdleUserdata(DifferenceTui *t, any u) { (*t).idleUserdata = u; }
+static inline fn Tui_setWsFieldX0(DifferenceTui *t, bytes x)
+{
+    (*t).wsFieldX0 = x;
+}
 ;;GETTER
-static inline DifferenceTuiWorkspaceLimitFn Tui_wsLimitHook(const DifferenceTui *t) { return (*t).workspaceLimitHook; }
+static inline bytes Tui_wsFieldX1(const DifferenceTui *t)
+{
+    return (*t).wsFieldX1;
+}
 ;;SETTER
-static inline fn Tui_setWsLimitHookField(DifferenceTui *t, DifferenceTuiWorkspaceLimitFn h) { (*t).workspaceLimitHook = h; }
+static inline fn Tui_setWsFieldX1(DifferenceTui *t, bytes x)
+{
+    (*t).wsFieldX1 = x;
+}
 ;;GETTER
-static inline any Tui_wsLimitUserdata(const DifferenceTui *t) { return (*t).workspaceLimitUserdata; }
+static inline bytes Tui_editsEditX0(const DifferenceTui *t)
+{
+    return (*t).editsEditX0;
+}
 ;;SETTER
-static inline fn Tui_setWsLimitUserdata(DifferenceTui *t, any u) { (*t).workspaceLimitUserdata = u; }
+static inline fn Tui_setEditsEditX0(DifferenceTui *t, bytes x)
+{
+    (*t).editsEditX0 = x;
+}
 ;;GETTER
-static inline DifferenceTuiSettingsChangedFn Tui_settingsChangedHook(const DifferenceTui *t) { return (*t).settingsChangedHook; }
+static inline bytes Tui_editsEditX1(const DifferenceTui *t)
+{
+    return (*t).editsEditX1;
+}
 ;;SETTER
-static inline fn Tui_setSettingsChangedHookField(DifferenceTui *t, DifferenceTuiSettingsChangedFn h) { (*t).settingsChangedHook = h; }
+static inline fn Tui_setEditsEditX1(DifferenceTui *t, bytes x)
+{
+    (*t).editsEditX1 = x;
+}
 ;;GETTER
-static inline any Tui_settingsChangedUserdata(const DifferenceTui *t) { return (*t).settingsChangedUserdata; }
+static inline bytes Tui_editsRowY(const DifferenceTui *t)
+{
+    return (*t).editsRowY;
+}
 ;;SETTER
-static inline fn Tui_setSettingsChangedUserdata(DifferenceTui *t, any u) { (*t).settingsChangedUserdata = u; }
+static inline fn Tui_setEditsRowY(DifferenceTui *t, bytes y)
+{
+    (*t).editsRowY = y;
+}
+;;GETTER
+static inline bytes Tui_editsFieldX0(const DifferenceTui *t)
+{
+    return (*t).editsFieldX0;
+}
+;;SETTER
+static inline fn Tui_setEditsFieldX0(DifferenceTui *t, bytes x)
+{
+    (*t).editsFieldX0 = x;
+}
+;;GETTER
+static inline bytes Tui_editsFieldX1(const DifferenceTui *t)
+{
+    return (*t).editsFieldX1;
+}
+;;SETTER
+static inline fn Tui_setEditsFieldX1(DifferenceTui *t, bytes x)
+{
+    (*t).editsFieldX1 = x;
+}
+;;GETTER
+static inline bool Tui_followTail(const DifferenceTui *t)
+{
+    return (*t).followTail;
+}
+;;SETTER
+static inline fn Tui_setFollowTail(DifferenceTui *t, bool f)
+{
+    (*t).followTail = f;
+}
+;;GETTER
+static inline bool Tui_dirty(const DifferenceTui *t)
+{
+    return (*t).dirty;
+}
+;;SETTER
+static inline fn Tui_setDirty(DifferenceTui *t, bool d)
+{
+    (*t).dirty = d;
+}
+;;GETTER
+static inline bool Tui_running(const DifferenceTui *t)
+{
+    return (*t).running;
+}
+;;SETTER
+static inline fn Tui_setRunning(DifferenceTui *t, bool r)
+{
+    (*t).running = r;
+}
+;;GETTER
+static inline DifferenceTuiIdleFn Tui_idleHook(const DifferenceTui *t)
+{
+    return (*t).idleHook;
+}
+;;SETTER
+static inline fn Tui_setIdleHookField(DifferenceTui *t, DifferenceTuiIdleFn h)
+{
+    (*t).idleHook = h;
+}
+;;GETTER
+static inline any Tui_idleUserdata(const DifferenceTui *t)
+{
+    return (*t).idleUserdata;
+}
+;;SETTER
+static inline fn Tui_setIdleUserdata(DifferenceTui *t, any u)
+{
+    (*t).idleUserdata = u;
+}
+;;GETTER
+static inline DifferenceTuiWorkspaceLimitFn Tui_wsLimitHook(const DifferenceTui *t)
+{
+    return (*t).workspaceLimitHook;
+}
+;;SETTER
+static inline fn Tui_setWsLimitHookField(DifferenceTui *t, DifferenceTuiWorkspaceLimitFn h)
+{
+    (*t).workspaceLimitHook = h;
+}
+;;GETTER
+static inline any Tui_wsLimitUserdata(const DifferenceTui *t)
+{
+    return (*t).workspaceLimitUserdata;
+}
+;;SETTER
+static inline fn Tui_setWsLimitUserdata(DifferenceTui *t, any u)
+{
+    (*t).workspaceLimitUserdata = u;
+}
+;;GETTER
+static inline DifferenceTuiSettingsChangedFn Tui_settingsChangedHook(const DifferenceTui *t)
+{
+    return (*t).settingsChangedHook;
+}
+;;SETTER
+static inline fn Tui_setSettingsChangedHookField(DifferenceTui *t, DifferenceTuiSettingsChangedFn h)
+{
+    (*t).settingsChangedHook = h;
+}
+;;GETTER
+static inline any Tui_settingsChangedUserdata(const DifferenceTui *t)
+{
+    return (*t).settingsChangedUserdata;
+}
+;;SETTER
+static inline fn Tui_setSettingsChangedUserdata(DifferenceTui *t, any u)
+{
+    (*t).settingsChangedUserdata = u;
+}
 
 ;;GETTER
-static inline const char *WatchEv_rel(const FileWatchEvent *e) { return (*e).relativePath; }
+static inline string WatchEv_rel(const FileWatchEvent *e)
+{
+    return (*e).relativePath;
+}
 ;;GETTER
-static inline const char *WatchEv_path(const FileWatchEvent *e) { return (*e).path; }
+static inline string WatchEv_path(const FileWatchEvent *e)
+{
+    return (*e).path;
+}
 ;;GETTER
-static inline FileEventType WatchEv_type(const FileWatchEvent *e) { return (*e).type; }
+static inline FileEventType WatchEv_type(const FileWatchEvent *e)
+{
+    return (*e).type;
+}
 ;;GETTER
-static inline i64 WatchEv_epoch(const FileWatchEvent *e) { return (*e).epochSeconds; }
+static inline i64 WatchEv_epoch(const FileWatchEvent *e)
+{
+    return (*e).epochSeconds;
+}
 ;;GETTER
-static inline i64 WatchEv_size(const FileWatchEvent *e) { return (*e).fileSize; }
+static inline i64 WatchEv_size(const FileWatchEvent *e)
+{
+    return (*e).fileSize;
+}
 
 ;;GETTER
-static inline u64 Rec_seq(const DifferenceEditRecord *r) { return (*r).sequence; }
+static inline u64 Rec_seq(const DifferenceEditRecord *r)
+{
+    return (*r).sequence;
+}
 ;;GETTER
-static inline const char *Rec_rel(const DifferenceEditRecord *r) { return (*r).relativePath; }
+static inline string Rec_rel(const DifferenceEditRecord *r)
+{
+    return (*r).relativePath;
+}
 ;;GETTER
-static inline const char *Rec_label(const DifferenceEditRecord *r) { return (*r).eventLabel; }
+static inline string Rec_label(const DifferenceEditRecord *r)
+{
+    return (*r).eventLabel;
+}
 ;;GETTER
-static inline const char *Rec_ts(const DifferenceEditRecord *r) { return (*r).timestamp; }
+static inline string Rec_ts(const DifferenceEditRecord *r)
+{
+    return (*r).timestamp;
+}
 ;;GETTER
-static inline FileEventType Rec_type(const DifferenceEditRecord *r) { return (*r).eventType; }
+static inline FileEventType Rec_type(const DifferenceEditRecord *r)
+{
+    return (*r).eventType;
+}
 ;;GETTER
-static inline i64 Rec_size(const DifferenceEditRecord *r) { return (*r).fileSize; }
+static inline i64 Rec_size(const DifferenceEditRecord *r)
+{
+    return (*r).fileSize;
+}
 ;;GETTER
-static inline const char *Rec_oldText(const DifferenceEditRecord *r) { return (*r).oldText; }
+static inline string Rec_oldText(const DifferenceEditRecord *r)
+{
+    return (*r).oldText;
+}
 ;;GETTER
-static inline bytes Rec_oldLen(const DifferenceEditRecord *r) { return (*r).oldLen; }
+static inline bytes Rec_oldLen(const DifferenceEditRecord *r)
+{
+    return (*r).oldLen;
+}
 ;;GETTER
-static inline const char *Rec_newText(const DifferenceEditRecord *r) { return (*r).newText; }
+static inline string Rec_newText(const DifferenceEditRecord *r)
+{
+    return (*r).newText;
+}
 ;;GETTER
-static inline bytes Rec_newLen(const DifferenceEditRecord *r) { return (*r).newLen; }
+static inline bytes Rec_newLen(const DifferenceEditRecord *r)
+{
+    return (*r).newLen;
+}
 ;;GETTER
-static inline DiffResult *Rec_diffMut(DifferenceEditRecord *r) { return &(*r).diff; }
+static inline DiffResult *Rec_diffMut(DifferenceEditRecord *r)
+{
+    return &(*r).diff;
+}
 ;;GETTER
-static inline DiffResult Rec_diffVal(const DifferenceEditRecord *r) { return (*r).diff; }
+static inline DiffResult Rec_diffVal(const DifferenceEditRecord *r)
+{
+    return (*r).diff;
+}
 ;;SETTER
-static inline fn Rec_setDiff(DifferenceEditRecord *r, DiffResult d) { (*r).diff = d; }
+static inline fn Rec_setDiff(DifferenceEditRecord *r, DiffResult d)
+{
+    (*r).diff = d;
+}
 ;;GETTER
-static inline bool Rec_expanded(const DifferenceEditRecord *r) { return (*r).expanded; }
+static inline bool Rec_expanded(const DifferenceEditRecord *r)
+{
+    return (*r).expanded;
+}
 ;;SETTER
-static inline fn Rec_setExpanded(DifferenceEditRecord *r, bool e) { (*r).expanded = e; }
+static inline fn Rec_setExpanded(DifferenceEditRecord *r, bool e)
+{
+    (*r).expanded = e;
+}
 ;;SETTER
-static inline fn Rec_assign(DifferenceEditRecord *dst, DifferenceEditRecord src) { *dst = src; }
+static inline fn Rec_assign(DifferenceEditRecord *dst, DifferenceEditRecord src)
+{
+    *dst = src;
+}
 
 /** Returns decimal digit length of v (minimum 1). */
 static u32 digitCountU64(u64 v) {
@@ -399,10 +871,10 @@ static fn installSignal(i32 sig, fn (*handler)(i32)) {
 }
 
 /** Writes all len bytes to fd, retrying short writes. */
-static fn writeAll(i32 fd, const char *buf, bytes len) {
+static fn writeAll(i32 fd, string buf, bytes len) {
     bytes sent = 0u;
     while (sent < len) {
-        ssize_t n = write(fd, buf + sent, len - sent);
+        i64 n = write(fd, buf + sent, len - sent);
         if (n <= 0)
             break;
         sent += (bytes) n;
@@ -410,7 +882,7 @@ static fn writeAll(i32 fd, const char *buf, bytes len) {
 }
 
 /** Maps FileEventType bits to an uppercase badge label. */
-static const char *tuiEventLabel(FileEventType type) {
+static string tuiEventLabel(FileEventType type) {
     if (type & FILE_EVENT_DELETED)
         return "DELETED";
     if (type & FILE_EVENT_CREATED)
@@ -432,8 +904,8 @@ static u32 tuiEventBg(FileEventType type) {
 }
 
 /** Formats epoch seconds into HH:MM:SS local time. */
-static fn tuiFormatTime(i64 epochSec, char *buf, bytes cap) {
-    time_t t = epochSec > 0 ? (time_t) epochSec : time(nullptr);
+static fn tuiFormatTime(i64 epochSec, utf8 *buf, bytes cap) {
+    timestamp t = epochSec > 0 ? (timestamp) epochSec : time(nullptr);
     struct tm tmBuf;
     if (localtime_r(&t, &tmBuf))
         strftime(buf, cap, "%H:%M:%S", &tmBuf);
@@ -442,13 +914,13 @@ static fn tuiFormatTime(i64 epochSec, char *buf, bytes cap) {
 }
 
 /** Formats byte size into human-readable B / KB / MB / GB / TB string. */
-static i32 formatByteSize(i64 fileSize, char *buf, bytes cap) {
+static i32 formatByteSize(i64 fileSize, utf8 *buf, bytes cap) {
     if (fileSize < 0)
         return snprintf(buf, cap, "0 B");
     if (fileSize < 1024)
         return snprintf(buf, cap, "%lld B", (long long) fileSize);
     d64 val = (d64) fileSize / 1024.0;
-    const char *unit = "KB";
+    string unit = "KB";
     if (val >= 1024.0) {
         val /= 1024.0;
         unit = "MB";
@@ -465,8 +937,8 @@ static i32 formatByteSize(i64 fileSize, char *buf, bytes cap) {
 }
 
 /** Normalizes a relative path so it always starts with a single leading '/'. */
-static i32 formatSlashPath(const char *raw, char *buf, bytes cap) {
-    const char *p = (raw && raw[0]) ? raw : "unnamed";
+static i32 formatSlashPath(string raw, utf8 *buf, bytes cap) {
+    string p = (raw && raw[0]) ? raw : "unnamed";
     while (p[0] == '.' && p[1] == '/')
         p += 2;
     while (p[0] == '/')
@@ -490,10 +962,10 @@ static fn queryTermSize(bytes *outW, bytes *outH) {
 }
 
 /** Duplicates len bytes into arena with trailing NUL byte. */
-static char *arenaDupBytes(MemoryArena *arena, const char *src, bytes len) {
+static utf8 *arenaDupBytes(MemoryArena *arena, string src, bytes len) {
     if (!arena)
         return nullptr;
-    char *copy = (char*) MemoryArena_alloc(arena, TYPE_DIFFERENCE_TUI, len + 1u);
+    utf8 *copy = (utf8*) MemoryArena_alloc(arena, TYPE_DIFFERENCE_TUI, len + 1u);
     if (!copy)
         return nullptr;
     if (len > 0u && src)
@@ -513,12 +985,13 @@ static fn beginSettingEdit(DifferenceTui *tui, i32 item) {
     TerminalTextArea *field = Tui_editField(tui);
     if (!field)
         return;
-    char *buf = Tui_editBufMut(tui);
+    utf8 *buf = Tui_editBufMut(tui);
+    bytes cap = Tui_editBufCap(tui);
     u32 val = (item == (i32) SETTINGS_ITEM_WORKSPACE_MB)
                   ? Tui_workspaceLimitMb(tui)
                   : Tui_maxEdits(tui);
-    snprintf(buf, sizeof((*tui).editBuf), "%u", (unsigned) val);
-    (discard) TerminalTextArea_bind(field, buf, sizeof((*tui).editBuf));
+    snprintf(buf, cap, "%u", (unsigned) val);
+    (discard) TerminalTextArea_bind(field, buf, cap);
     Tui_setEditingSetting(tui, item);
     Tui_setDirty(tui, true);
 }
@@ -529,7 +1002,7 @@ static fn commitSettingEdit(DifferenceTui *tui) {
     if (item < 0)
         return;
     TerminalTextArea *field = Tui_editField(tui);
-    const char *text = field ? TerminalTextArea_getBuffer(field) : "";
+    string text = field ? TerminalTextArea_getBuffer(field) : "";
     unsigned long parsed = strtoul(text, nullptr, 10);
     Tui_setEditingSetting(tui, -1);
     if (parsed > 0ul) {
@@ -713,17 +1186,17 @@ static fn ensureSelectedVisible(DifferenceTui *tui) {
 }
 
 /** Initializes DifferenceTui with determinant surface, compositor, input, text field, and arenas. */
-bool DifferenceTui_init(DifferenceTui *tui, const char *watchRoot,
+bool DifferenceTui_init(DifferenceTui *tui, string watchRoot,
                         TerminalDiffLayoutMode initialLayout, bool useColor) {
     if (!tui)
         return false;
     memset(tui, 0, sizeof(*tui));
 
-    MemoryArena *frameArena = MemoryArena_create(64u * 1024u * 1024u);
-    MemoryArena *recordArena = MemoryArena_create(256u * 1024u * 1024u);
-    MemoryArena *diffScratch = MemoryArena_create(64u * 1024u * 1024u);
+    MemoryArena *frameArena = MemoryArena(64u * 1024u * 1024u);
+    MemoryArena *recordArena = MemoryArena(256u * 1024u * 1024u);
+    MemoryArena *diffScratch = MemoryArena(64u * 1024u * 1024u);
     TerminalCompositor *comp = TerminalCompositor_1(STDOUT_FILENO);
-    TerminalTextArea *editField = TerminalTextArea_2((*tui).editBuf, sizeof((*tui).editBuf));
+    TerminalTextArea *editField = TerminalTextArea_2(Tui_editBufMut(tui), Tui_editBufCap(tui));
     if (!frameArena || !recordArena || !diffScratch || !comp || !editField) {
         if (editField)
             TerminalTextArea_free(editField);
@@ -840,9 +1313,9 @@ fn DifferenceTui_exportSettings(const DifferenceTui *tui, DifferenceSettings *ou
         return;
     *out = DifferenceSettings_0();
     DifferenceSettings_setCollapseMode(out, Tui_collapseMode(tui));
-    (discard) DifferenceSettings_setDiffLayout(out, TerminalDiffPanel_layoutMode(&(*tui).panel));
+    (discard) DifferenceSettings_setDiffLayout(out, TerminalDiffPanel_layoutMode(Tui_panel(tui)));
     DifferenceSettings_setFollowTail(out, Tui_followTail(tui));
-    TerminalDiffTheme th = TerminalDiffPanel_theme(&(*tui).panel);
+    TerminalDiffTheme th = TerminalDiffPanel_theme(Tui_panel(tui));
     DifferenceSettings_setColor(out, th.useColor);
     DifferenceSettings_setDiffIcons(out, th.showDiffIcons);
     (discard) DifferenceSettings_setContextLines(out, Tui_contextLines(tui));
@@ -965,8 +1438,8 @@ fn DifferenceTui_clearEdits(DifferenceTui *tui) {
 /** Appends a live file edit record and computes its structured diff for TUI reflow. */
 bool DifferenceTui_pushEdit(DifferenceTui *tui,
                             const FileWatchEvent *event,
-                            const char *oldText, bytes oldLen,
-                            const char *newText, bytes newLen) {
+                            string oldText, bytes oldLen,
+                            string newText, bytes newLen) {
     if (!tui || !event)
         return false;
 
@@ -988,12 +1461,12 @@ bool DifferenceTui_pushEdit(DifferenceTui *tui,
             Tui_setSelectedIndex(tui, Tui_selectedIndex(tui) - 1u);
     }
 
-    const char *path = WatchEv_path(event) ? WatchEv_path(event) : "";
-    const char *rel = (WatchEv_rel(event) && WatchEv_rel(event)[0]) ? WatchEv_rel(event) : path;
-    char *oldCopy = arenaDupBytes(ra, oldText ? oldText : "", oldLen);
-    char *newCopy = arenaDupBytes(ra, newText ? newText : "", newLen);
-    char *pathCopy = arenaDupBytes(ra, path, strlen(path));
-    char *relCopy = arenaDupBytes(ra, rel, strlen(rel));
+    string path = WatchEv_path(event) ? WatchEv_path(event) : "";
+    string rel = (WatchEv_rel(event) && WatchEv_rel(event)[0]) ? WatchEv_rel(event) : path;
+    utf8 *oldCopy = arenaDupBytes(ra, oldText ? oldText : "", oldLen);
+    utf8 *newCopy = arenaDupBytes(ra, newText ? newText : "", newLen);
+    utf8 *pathCopy = arenaDupBytes(ra, path, strlen(path));
+    utf8 *relCopy = arenaDupBytes(ra, rel, strlen(rel));
     if (!oldCopy || !newCopy || !pathCopy || !relCopy) {
         DifferenceTui_clearEdits(tui);
         oldCopy = arenaDupBytes(ra, oldText ? oldText : "", oldLen);
@@ -1126,11 +1599,11 @@ static fn paintEditRow(TerminalCanvas *body, bytes sy, bytes bodyW,
         TerminalCanvas_glyph(body, c, sy, (u32) ' ', basePen);
 
     DiffResult dv = Rec_diffVal(rec);
-    char addRaw[24];
-    char delRaw[24];
-    char addBuf[32];
-    char delBuf[32];
-    char timeBuf[24];
+    utf8 addRaw[24];
+    utf8 delRaw[24];
+    utf8 addBuf[32];
+    utf8 delBuf[32];
+    utf8 timeBuf[24];
     (discard) snprintf(addRaw, sizeof(addRaw), "+%u", (unsigned) dv.linesAdded);
     (discard) snprintf(delRaw, sizeof(delRaw), "-%u", (unsigned) dv.linesRemoved);
     bytes addColW = (bytes) maxAddDigits + 1u;
@@ -1151,8 +1624,8 @@ static fn paintEditRow(TerminalCanvas *body, bytes sy, bytes bodyW,
         x += 2u;
     }
 
-    char seqRaw[24];
-    char seqBuf[32];
+    utf8 seqRaw[24];
+    utf8 seqBuf[32];
     (discard) snprintf(seqRaw, sizeof(seqRaw), "#%llu", (unsigned long long) Rec_seq(rec));
     bytes seqColW = (bytes) maxSeqDigits + 1u;
     i32 sn = snprintf(seqBuf, sizeof(seqBuf), "%*s ", (int) seqColW, seqRaw);
@@ -1166,7 +1639,7 @@ static fn paintEditRow(TerminalCanvas *body, bytes sy, bytes bodyW,
         x += n;
     }
 
-    char pillBuf[24];
+    utf8 pillBuf[24];
     i32 pn = snprintf(pillBuf, sizeof(pillBuf), " %s ", Rec_label(rec));
     if (pn > 0 && x < rightStart) {
         bytes avail = rightStart - x;
@@ -1178,11 +1651,11 @@ static fn paintEditRow(TerminalCanvas *body, bytes sy, bytes bodyW,
         x += n + 1u;
     }
 
-    char sizeBuf[32];
+    utf8 sizeBuf[32];
     i32 szn = formatByteSize(Rec_size(rec), sizeBuf, sizeof(sizeBuf));
     bytes sizeLen = szn > 0 ? (bytes) szn : 0u;
 
-    char pathBuf[512];
+    utf8 pathBuf[512];
     i32 pathLen = formatSlashPath(Rec_rel(rec), pathBuf, sizeof(pathBuf));
     if (pathLen > 0 && x < rightStart) {
         bytes gapForSize = (sizeLen > 0u && rightStart > x + sizeLen + 3u) ? sizeLen + 2u : 0u;
@@ -1237,7 +1710,7 @@ static fn paintEditRow(TerminalCanvas *body, bytes sy, bytes bodyW,
 
 /** Paints a centered bordered modal frame with a clickable close pill. */
 static fn paintModalFrame(DifferenceTui *tui, TerminalCanvas *root,
-                          const char *title, bytes mw, bytes mh, bool color) {
+                          string title, bytes mw, bytes mh, bool color) {
     bytes width = Tui_width(tui);
     bytes height = Tui_height(tui);
     if (mw > width - 2u)
@@ -1294,7 +1767,7 @@ static fn paintModalFrame(DifferenceTui *tui, TerminalCanvas *root,
 
 /** Paints a label (regular) followed by a highlighted bold keycap pill. */
 static bytes paintKeyHint(TerminalCanvas *root, bytes x, bytes y,
-                          const char *label, const char *keycap,
+                          string label, string keycap,
                           bool active, bool color, u32 barBg) {
     u32 capBg = active ? TERMINAL_RGB(48, 92, 165) : TERMINAL_RGB(40, 48, 64);
     u32 capFg = active ? TERMINAL_RGB(250, 252, 255) : TERMINAL_RGB(214, 226, 240);
@@ -1314,7 +1787,7 @@ static bytes paintKeyHint(TerminalCanvas *root, bytes x, bytes y,
 
 /** Paints the Help shortcuts overlay with left-aligned names and right-aligned keys. */
 static fn paintHelpOverlay(DifferenceTui *tui, TerminalCanvas *root, bool color) {
-    const char *names[] = {
+    string names[] = {
         "Expand or collapse diff",
         "Toggle collapse mode (all)",
         "Open or close settings",
@@ -1327,7 +1800,7 @@ static fn paintHelpOverlay(DifferenceTui *tui, TerminalCanvas *root, bool color)
         "Clear modifications",
         "Quit"
     };
-    const char *keys[] = {
+    string keys[] = {
         "enter / space / click",
         "option + o",
         "ctrl + o",
@@ -1356,7 +1829,7 @@ static fn paintHelpOverlay(DifferenceTui *tui, TerminalCanvas *root, bool color)
     bytes innerRight = mx + mw - 2u;
     for (bytes i = 0u; i < nlines && i + 2u < mh - 2u; i++) {
         bytes ry = my + 2u + i;
-        char kbuf[40];
+        utf8 kbuf[40];
         i32 kn = snprintf(kbuf, sizeof(kbuf), " %s ", keys[i]);
         bytes klen = kn > 0 ? (bytes) kn : 0u;
         bytes kx = innerRight > klen ? innerRight - klen : mx + 2u;
@@ -1382,7 +1855,7 @@ static fn paintHelpOverlay(DifferenceTui *tui, TerminalCanvas *root, bool color)
 /** Paints an editable numeric setting row (either clickable pill + edit icon or live TerminalTextArea). */
 static fn paintEditableNumberRow(DifferenceTui *tui, TerminalCanvas *root,
                                  bytes ry, bytes innerRight, bytes minX,
-                                 i32 itemIdx, u32 value, const char *suffix,
+                                 i32 itemIdx, u32 value, string suffix,
                                  bool color, u32 rbg, u16 rstyle,
                                  bytes *outEditX0, bytes *outEditX1,
                                  bytes *outFieldX0, bytes *outFieldX1) {
@@ -1404,7 +1877,7 @@ static fn paintEditableNumberRow(DifferenceTui *tui, TerminalCanvas *root,
 
         TerminalTextArea *field = Tui_editField(tui);
         (discard) TerminalTextArea_setPen(field, fieldPen);
-        (*field).cursorPen = caretPen;
+        TextArea_setCursorPen(field, caretPen);
         TerminalCanvas sub = TerminalCanvas_sub(root, fx, ry, fieldW, 1u);
         TerminalTextArea_render(field, &sub);
 
@@ -1421,7 +1894,7 @@ static fn paintEditableNumberRow(DifferenceTui *tui, TerminalCanvas *root,
         return;
     }
 
-    char vbuf[32];
+    utf8 vbuf[32];
     i32 vn = suffixLen > 0u
                  ? snprintf(vbuf, sizeof(vbuf), " %u%s ", (unsigned) value, suffix)
                  : snprintf(vbuf, sizeof(vbuf), " %u ", (unsigned) value);
@@ -1464,13 +1937,13 @@ static fn paintSettingsOverlay(DifferenceTui *tui, TerminalCanvas *root, bool co
     TerminalDiffPanel *panel = Tui_panelMut(tui);
     TerminalDiffLayoutMode lm = TerminalDiffPanel_layoutMode(panel);
     TerminalDiffTheme th = TerminalDiffPanel_theme(panel);
-    const char *layoutStr = " AUTO ";
+    string layoutStr = " AUTO ";
     if (lm == TERMINAL_DIFF_LAYOUT_SIDE_BY_SIDE)
         layoutStr = " SPLIT ";
     else if (lm == TERMINAL_DIFF_LAYOUT_UNIFIED)
         layoutStr = " UNIFIED ";
 
-    const char *labels[SETTINGS_ITEM_COUNT] = {
+    string labels[SETTINGS_ITEM_COUNT] = {
         "Collapse mode",
         "Diff layout",
         "Follow tail",
@@ -1500,7 +1973,7 @@ static fn paintSettingsOverlay(DifferenceTui *tui, TerminalCanvas *root, bool co
         TerminalCanvas_text(root, mx + 4u, ry, labels[i], strlen(labels[i]), rowPen);
 
         if (i == SETTINGS_ITEM_CONTEXT) {
-            char nbuf[16];
+            utf8 nbuf[16];
             i32 nn = snprintf(nbuf, sizeof(nbuf), " %2u ", (unsigned) Tui_contextLines(tui));
             bytes numLen = nn > 0 ? (bytes) nn : 4u;
             bytes ctrlW = 3u + numLen + 3u;
@@ -1548,7 +2021,7 @@ static fn paintSettingsOverlay(DifferenceTui *tui, TerminalCanvas *root, bool co
             Tui_setEditsFieldX0(tui, fx0);
             Tui_setEditsFieldX1(tui, fx1);
         } else {
-            const char *valText = " NO ";
+            string valText = " NO ";
             bool isOn = false;
             if (i == 0u) {
                 isOn = Tui_collapseMode(tui);
@@ -1598,7 +2071,7 @@ static fn paintSettingsOverlay(DifferenceTui *tui, TerminalCanvas *root, bool co
 }
 
 /** Paints one horizontally centered line onto canvas at row y. */
-static fn paintCenteredLine(TerminalCanvas *canvas, bytes y, const char *text, bytes len, TerminalPen pen) {
+static fn paintCenteredLine(TerminalCanvas *canvas, bytes y, string text, bytes len, TerminalPen pen) {
     bytes w = TerminalCanvas_getWidth(canvas);
     bytes h = TerminalCanvas_getHeight(canvas);
     if (y >= h || w == 0u || len == 0u)
@@ -1619,7 +2092,7 @@ static fn paintTooSmallNotice(TerminalCanvas *root, bytes width, bytes height, b
     TerminalPen sizePen = TerminalPen_3(TERMINAL_STYLE_BOLD,
                                         color ? TERMINAL_RGB(121, 192, 255) : TERMINAL_COLOR_DEFAULT,
                                         TERMINAL_COLOR_DEFAULT);
-    char curBuf[48];
+    utf8 curBuf[48];
     i32 cn = snprintf(curBuf, sizeof(curBuf), "Current: %zux%zu", (size_t) width, (size_t) height);
     bytes startY = height > 3u ? (height - 3u) / 2u : 0u;
     paintCenteredLine(root, startY, "Terminal too small", 18u, titlePen);
@@ -1632,9 +2105,9 @@ static fn paintTooSmallNotice(TerminalCanvas *root, bytes width, bytes height, b
 static fn paintWelcomeEmptyState(TerminalCanvas *body, bool color) {
     bytes bodyW = TerminalCanvas_getWidth(body);
     bytes bodyH = TerminalCanvas_getHeight(body);
-    const char *title = "Welcome to Difference";
-    const char *sub = "Anything you, your agent, or anything else modifies in this directory will show up here.";
-    const char *footer = "Happy developing! ^^";
+    string title = "Welcome to Difference";
+    string sub = "Anything you, your agent, or anything else modifies in this directory will show up here.";
+    string footer = "Happy developing! ^^";
 
     bytes maxWrap = bodyW > 4u ? bodyW - 4u : bodyW;
     if (maxWrap > 50u)
@@ -1642,10 +2115,10 @@ static fn paintWelcomeEmptyState(TerminalCanvas *body, bool color) {
     if (maxWrap < 12u)
         maxWrap = bodyW;
 
-    const char *linePtrs[8];
+    string linePtrs[8];
     bytes lineLens[8];
     bytes wrappedCount = 0u;
-    const char *p = sub;
+    string p = sub;
     while (*p && wrappedCount < 8u) {
         while (*p == ' ')
             p++;
@@ -1752,10 +2225,10 @@ fn DifferenceTui_renderFrame(DifferenceTui *tui) {
                                          color ? TERMINAL_RGB(48, 92, 165) : barBg);
     TerminalCanvas_text(&root, 1u, 0u, " Difference ", 12u, brandPen);
 
-    char filesBuf[40];
-    char modsBuf[48];
-    char addTotBuf[32];
-    char delTotBuf[32];
+    utf8 filesBuf[40];
+    utf8 modsBuf[48];
+    utf8 addTotBuf[32];
+    utf8 delTotBuf[32];
     i32 fln = snprintf(filesBuf, sizeof(filesBuf), "%zu files  ", (size_t) Tui_trackedFiles(tui));
     i32 mdn = snprintf(modsBuf, sizeof(modsBuf), "%llu modifications  ", (unsigned long long) Tui_editSeq(tui));
     i32 adn = snprintf(addTotBuf, sizeof(addTotBuf), "+%llu", (unsigned long long) Tui_totalAdded(tui));
@@ -1849,7 +2322,7 @@ fn DifferenceTui_renderFrame(DifferenceTui *tui) {
     bytes rightBotLen = helpBtnW + 2u + setBtnW + 1u;
     bytes rightBotX = width > rightBotLen ? width - rightBotLen : 0u;
 
-    const char *watchRoot = Tui_watchRoot(tui);
+    string watchRoot = Tui_watchRoot(tui);
     bytes dirLen = strlen(watchRoot);
     if (dirLen > 0u && rightBotX > 2u) {
         bytes maxDir = rightBotX - 2u;
@@ -2215,7 +2688,7 @@ fn DifferenceTui_handleInputByte(DifferenceTui *tui, i32 byte) {
 }
 
 /** Parses Ghostty/Mode-2048 in-band resize report ESC [ 48 ; rows ; cols ... t. */
-static bool tryParseInBandResize(DifferenceTui *tui, const char *seq, bytes len) {
+static bool tryParseInBandResize(DifferenceTui *tui, string seq, bytes len) {
     if (len < 7u || seq[0] != '\x1b' || seq[1] != '[' || seq[len - 1u] != 't')
         return false;
     if (seq[2] != '4' || seq[3] != '8' || seq[4] != ';')
@@ -2244,7 +2717,7 @@ static bool tryParseInBandResize(DifferenceTui *tui, const char *seq, bytes len)
 }
 
 /** Handles bare Esc, ANSI arrows, Option+O, PageUp/PageDown, and Mode-2048 resize sequences. */
-fn DifferenceTui_handleKeySeq(DifferenceTui *tui, const char *seq, bytes len) {
+fn DifferenceTui_handleKeySeq(DifferenceTui *tui, string seq, bytes len) {
     if (!tui || !seq || len == 0u || seq[0] != '\x1b')
         return;
 
@@ -2357,7 +2830,7 @@ i32 DifferenceTui_run(DifferenceTui *tui, FileEventWatcher *watcher) {
     installSignal(SIGWINCH, onTuiResize);
 
     (discard) TerminalCompositor_enter(comp);
-    const char *modesOn = "\x1b[?1000h\x1b[?1006h\x1b[?2048h";
+    string modesOn = "\x1b[?1000h\x1b[?1006h\x1b[?2048h";
     writeAll(Tui_outFd(tui), modesOn, strlen(modesOn));
 
     bytes w = 80u;
@@ -2391,8 +2864,8 @@ i32 DifferenceTui_run(DifferenceTui *tui, FileEventWatcher *watcher) {
         pfd.events = POLLIN;
         pfd.revents = 0;
         if (poll(&pfd, 1, idlePending ? 0 : 25) > 0 && (pfd.revents & POLLIN)) {
-            char buf[64];
-            ssize_t n = read(STDIN_FILENO, buf, sizeof(buf));
+            utf8 buf[64];
+            i64 n = read(STDIN_FILENO, buf, sizeof(buf));
             if (n > 0) {
                 bytes nb = (bytes) n;
                 if (nb == 1u && buf[0] == '\x1b')
@@ -2403,7 +2876,7 @@ i32 DifferenceTui_run(DifferenceTui *tui, FileEventWatcher *watcher) {
                     DifferenceTui_handleKeySeq(tui, buf, nb);
                 else
                     for (bytes i = 0; i < nb; i++)
-                        DifferenceTui_handleInputByte(tui, (unsigned char) buf[i]);
+                        DifferenceTui_handleInputByte(tui, (u8) buf[i]);
             }
         }
 
@@ -2419,7 +2892,7 @@ i32 DifferenceTui_run(DifferenceTui *tui, FileEventWatcher *watcher) {
             DifferenceTui_renderFrame(tui);
     }
 
-    const char *modesOff = "\x1b[?2048l\x1b[?1006l\x1b[?1000l";
+    string modesOff = "\x1b[?2048l\x1b[?1006l\x1b[?1000l";
     writeAll(Tui_outFd(tui), modesOff, strlen(modesOff));
     (discard) TerminalCompositor_leave(comp);
     if (haveTerm)

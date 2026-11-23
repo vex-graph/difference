@@ -6,7 +6,7 @@
 #include "io/file/file.h"
 #include "nio/mem.h"
 
-// snapshot_store.h — in-memory file content snapshots for realtime edit diffing.
+/** snapshot_store.h, in-memory file content snapshots for realtime edit diffing. */
 
 enum {
     SNAPSHOT_SEEDER_MAX_DEPTH = 17u
@@ -15,8 +15,8 @@ enum {
 #define SNAPSHOT_DEFAULT_MAX_WORKSPACE_BYTES (1024ULL * 1024ULL * 1024ULL)
 
 typedef struct SnapshotEntry {
-    char *path;
-    char *data;
+    utf8 *path;
+    utf8 *data;
     bytes pathLen;
     bytes length;
     u64 hash;
@@ -39,7 +39,7 @@ typedef struct SnapshotStore {
 
 typedef struct SnapshotSeedFrame {
     DIR *dp;
-    char dirPath[FILE_PATH_MAX];
+    utf8 dirPath[FILE_PATH_MAX];
 } SnapshotSeedFrame;
 
 typedef struct SnapshotSeeder {
@@ -55,16 +55,16 @@ fn SnapshotStore_free(SnapshotStore *store);
 fn SnapshotStore_setMaxWorkspaceBytes(SnapshotStore *store, bytes maxBytes);
 bytes SnapshotStore_maxWorkspaceBytes(const SnapshotStore *store);
 bytes SnapshotStore_totalDataBytes(const SnapshotStore *store);
-bool SnapshotStore_seedDir(SnapshotStore *store, const char *rootDir, const FileEventWatcher *filter);
+bool SnapshotStore_seedDir(SnapshotStore *store, string rootDir, const FileEventWatcher *filter);
 bool SnapshotSeeder_begin(SnapshotSeeder *seeder, SnapshotStore *store,
-                          const char *rootDir, const FileEventWatcher *filter);
+                          string rootDir, const FileEventWatcher *filter);
 bool SnapshotSeeder_step(SnapshotSeeder *seeder, bytes maxFiles);
 fn SnapshotSeeder_finish(SnapshotSeeder *seeder);
-const SnapshotEntry *SnapshotStore_find(const SnapshotStore *store, const char *path);
-bool SnapshotStore_put(SnapshotStore *store, const char *path, const char *data, bytes len);
-bool SnapshotStore_remove(SnapshotStore *store, const char *path);
-char *SnapshotStore_readFile(SnapshotStore *store, const char *path, bytes *outLen, bool *outBinary);
-fn SnapshotStore_freeBuf(SnapshotStore *store, char *buf);
+const SnapshotEntry *SnapshotStore_find(const SnapshotStore *store, string path);
+bool SnapshotStore_put(SnapshotStore *store, string path, string data, bytes len);
+bool SnapshotStore_remove(SnapshotStore *store, string path);
+utf8 *SnapshotStore_readFile(SnapshotStore *store, string path, bytes *outLen, bool *outBinary);
+fn SnapshotStore_freeBuf(SnapshotStore *store, utf8 *buf);
 bytes SnapshotStore_count(const SnapshotStore *store);
 
 #endif

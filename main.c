@@ -14,6 +14,7 @@
 #include "difference_printer.h"
 #include "difference_settings.h"
 #include "difference_tui.h"
+#include "main.h"
 #include "snapshot_store.h"
 
 ;;DEFINITION
@@ -40,46 +41,76 @@
 
 static atomic_bool g_stopRequested = false;
 
-typedef struct WatchApp {
-    SnapshotStore store;
-    SnapshotSeeder seeder;
-    DifferencePrinter printer;
-    DifferenceTui *tui;
-    FILE *out;
-    bytes lastReportedFiles;
-    char settingsPath[1024];
-    bool haveSettingsPath;
-} WatchApp;
+
 
 ;;GETTER
-static inline SnapshotStore *App_storeMut(WatchApp *a) { return &(*a).store; }
+static inline SnapshotStore *App_storeMut(WatchApp *a)
+{
+    return &(*a).store;
+}
 ;;GETTER
-static inline SnapshotSeeder *App_seederMut(WatchApp *a) { return &(*a).seeder; }
+static inline SnapshotSeeder *App_seederMut(WatchApp *a)
+{
+    return &(*a).seeder;
+}
 ;;GETTER
-static inline DifferencePrinter *App_printerMut(WatchApp *a) { return &(*a).printer; }
+static inline DifferencePrinter *App_printerMut(WatchApp *a)
+{
+    return &(*a).printer;
+}
 ;;GETTER
-static inline DifferenceTui *App_tui(const WatchApp *a) { return (*a).tui; }
+static inline DifferenceTui *App_tui(const WatchApp *a)
+{
+    return (*a).tui;
+}
 ;;GETTER
-static inline FILE *App_out(const WatchApp *a) { return (*a).out; }
+static inline FILE *App_out(const WatchApp *a)
+{
+    return (*a).out;
+}
 ;;GETTER
-static inline bytes App_lastReported(const WatchApp *a) { return (*a).lastReportedFiles; }
+static inline bytes App_lastReported(const WatchApp *a)
+{
+    return (*a).lastReportedFiles;
+}
 ;;SETTER
-static inline fn App_setLastReported(WatchApp *a, bytes n) { (*a).lastReportedFiles = n; }
+static inline fn App_setLastReported(WatchApp *a, bytes n)
+{
+    (*a).lastReportedFiles = n;
+}
 ;;GETTER
-static inline const char *App_settingsPath(const WatchApp *a) { return (*a).settingsPath; }
+static inline string App_settingsPath(const WatchApp *a)
+{
+    return (*a).settingsPath;
+}
 ;;GETTER
-static inline bool App_haveSettingsPath(const WatchApp *a) { return (*a).haveSettingsPath; }
+static inline bool App_haveSettingsPath(const WatchApp *a)
+{
+    return (*a).haveSettingsPath;
+}
 ;;GETTER
-static inline const char *Ev_path(const FileWatchEvent *e) { return (*e).path; }
+static inline string Ev_path(const FileWatchEvent *e)
+{
+    return (*e).path;
+}
 ;;GETTER
-static inline FileEventType Ev_type(const FileWatchEvent *e) { return (*e).type; }
+static inline FileEventType Ev_type(const FileWatchEvent *e)
+{
+    return (*e).type;
+}
 ;;GETTER
-static inline const char *Snap_data(const SnapshotEntry *s) { return (*s).data; }
+static inline string Snap_data(const SnapshotEntry *s)
+{
+    return (*s).data;
+}
 ;;GETTER
-static inline bytes Snap_length(const SnapshotEntry *s) { return (*s).length; }
+static inline bytes Snap_length(const SnapshotEntry *s)
+{
+    return (*s).length;
+}
 
 /** Compares a CLI argument against an expected flag string. */
-static bool argEq(const char *a, const char *b) {
+static bool argEq(string a, string b) {
     if (!a || !b)
         return false;
     bytes la = strlen(a);
@@ -97,8 +128,8 @@ static fn onSignal(i32 sig) {
 
 /** Emits a single diff either into the live TUI or the stream printer. */
 static fn emitDiff(WatchApp *app, const FileWatchEvent *event,
-                   const char *oldData, bytes oldLen,
-                   const char *newData, bytes newLen) {
+                   string oldData, bytes oldLen,
+                   string newData, bytes newLen) {
     DifferenceTui *tui = App_tui(app);
     if (tui) {
         (discard) DifferenceTui_pushEdit(tui, event, oldData, oldLen, newData, newLen);
@@ -115,14 +146,14 @@ static fn emitDiff(WatchApp *app, const FileWatchEvent *event,
 /** Handles one pumped FileWatchEvent by diffing against the stored snapshot. */
 static fn onWatchEvent(const FileWatchEvent *event, any userdata) {
     WatchApp *app = (WatchApp*) userdata;
-    const char *path = Ev_path(event);
+    string path = Ev_path(event);
     FileEventType type = Ev_type(event);
     if (!path || !app)
         return;
 
     SnapshotStore *store = App_storeMut(app);
     const SnapshotEntry *prev = SnapshotStore_find(store, path);
-    const char *oldData = prev ? Snap_data(prev) : "";
+    string oldData = prev ? Snap_data(prev) : "";
     bytes oldLen = prev ? Snap_length(prev) : 0u;
 
     if ((type & FILE_EVENT_DELETED) && !File_exists(path)) {
@@ -136,7 +167,7 @@ static fn onWatchEvent(const FileWatchEvent *event, any userdata) {
 
     bytes newLen = 0u;
     bool isBinary = false;
-    char *newData = SnapshotStore_readFile(store, path, &newLen, &isBinary);
+    utf8 *newData = SnapshotStore_readFile(store, path, &newLen, &isBinary);
     if (isBinary)
         return;
     if (!newData) {
@@ -198,8 +229,8 @@ static fn printUsage() {
 }
 
 /** Watches the target directory (default cwd) in TUI mode (TTY) or stream mode. */
-i32 main(i32 argc, char **argv) {
-    const char *targetArg = ".";
+i32 main(i32 argc, utf8 **argv) {
+    string targetArg = ".";
     TerminalDiffLayoutMode cliLayout = TERMINAL_DIFF_LAYOUT_AUTO;
     bool cliLayoutSet = false;
     bool cliNoColor = false;
@@ -231,15 +262,15 @@ i32 main(i32 argc, char **argv) {
         else if (argv[i][0] != '-')
             targetArg = argv[i];
         else {
-            fprintf(stderr, "difference: unknown option '%s'\n", argv[i]);
+            fprint(stderr, "difference: unknown option '", argv[i], "'");
             printUsage();
             return 2;
         }
     }
 
-    char resolved[PATH_MAX];
+    utf8 resolved[PATH_MAX];
     if (!realpath(targetArg, resolved)) {
-        fprintf(stderr, "difference: cannot resolve path '%s'\n", targetArg);
+        fprint(stderr, "difference: cannot resolve path '", targetArg, "'");
         return 1;
     }
 
@@ -286,7 +317,7 @@ i32 main(i32 argc, char **argv) {
         app.tui = &tui;
     }
 
-    const char *defaultIgnores[] = {
+    string defaultIgnores[] = {
         "*.swp", "*.swo", "*.tmp", "*~",
         "*___jb_tmp___", "*___jb_old___",
         "*.o", "*.a", "*.dylib", "*.so",
@@ -301,7 +332,7 @@ i32 main(i32 argc, char **argv) {
     props.ignorePatterns = defaultIgnores;
     props.ignoreCount = sizeof(defaultIgnores) / sizeof(defaultIgnores[0]);
 
-    FileEventWatcher *watcher = FileEventWatcher_createWithProps(resolved, FILE_EVENT_ALL, &props, onWatchEvent, &app);
+    FileEventWatcher *watcher = FileEventWatcher(resolved, FILE_EVENT_ALL, &props, onWatchEvent, &app);
     if (!watcher) {
         fputs("difference: failed to create file watcher\n", stderr);
         if (useTui)
@@ -331,8 +362,7 @@ i32 main(i32 argc, char **argv) {
         (discard) SnapshotStore_seedDir(&app.store, resolved, watcher);
         signal(SIGINT, onSignal);
         signal(SIGTERM, onSignal);
-        fprintf(stdout, "difference: watching %s (%zu files tracked; Ctrl-C to stop)\n",
-                resolved, (size_t) SnapshotStore_count(&app.store));
+        fprint(stdout, "difference: watching ", resolved, " (", (size_t) SnapshotStore_count(&app.store), " files tracked; Ctrl-C to stop)");
         fflush(stdout);
 
         const struct timespec nap = { 0, 50000000L };

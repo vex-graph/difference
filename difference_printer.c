@@ -28,27 +28,60 @@
  */
 
 ;;GETTER
-static inline TerminalDiffPanel *Printer_panelMut(DifferencePrinter *p) { return &(*p).panel; }
+static inline TerminalDiffPanel *Printer_panelMut(DifferencePrinter *p)
+{
+    return &(*p).panel;
+}
 ;;GETTER
-static inline u64 Printer_editCounter(const DifferencePrinter *p) { return (*p).editCounter; }
+static inline u64 Printer_editCounter(const DifferencePrinter *p)
+{
+    return (*p).editCounter;
+}
 ;;SETTER
-static inline fn Printer_setEditCounter(DifferencePrinter *p, u64 v) { (*p).editCounter = v; }
+static inline fn Printer_setEditCounter(DifferencePrinter *p, u64 v)
+{
+    (*p).editCounter = v;
+}
 ;;GETTER
-static inline i64 Printer_lastFileSize(const DifferencePrinter *p) { return (*p).lastFileSize; }
+static inline i64 Printer_lastFileSize(const DifferencePrinter *p)
+{
+    return (*p).lastFileSize;
+}
 ;;SETTER
-static inline fn Printer_setLastFileSize(DifferencePrinter *p, i64 v) { (*p).lastFileSize = v; }
+static inline fn Printer_setLastFileSize(DifferencePrinter *p, i64 v)
+{
+    (*p).lastFileSize = v;
+}
 ;;GETTER
-static inline FileEventType Printer_lastEventType(const DifferencePrinter *p) { return (*p).lastEventType; }
+static inline FileEventType Printer_lastEventType(const DifferencePrinter *p)
+{
+    return (*p).lastEventType;
+}
 ;;SETTER
-static inline fn Printer_setLastEventType(DifferencePrinter *p, FileEventType t) { (*p).lastEventType = t; }
+static inline fn Printer_setLastEventType(DifferencePrinter *p, FileEventType t)
+{
+    (*p).lastEventType = t;
+}
 ;;GETTER
-static inline u32 Printer_maxAddDigits(const DifferencePrinter *p) { return (*p).maxAddDigits; }
+static inline u32 Printer_maxAddDigits(const DifferencePrinter *p)
+{
+    return (*p).maxAddDigits;
+}
 ;;SETTER
-static inline fn Printer_setMaxAddDigits(DifferencePrinter *p, u32 d) { (*p).maxAddDigits = d; }
+static inline fn Printer_setMaxAddDigits(DifferencePrinter *p, u32 d)
+{
+    (*p).maxAddDigits = d;
+}
 ;;GETTER
-static inline u32 Printer_maxDelDigits(const DifferencePrinter *p) { return (*p).maxDelDigits; }
+static inline u32 Printer_maxDelDigits(const DifferencePrinter *p)
+{
+    return (*p).maxDelDigits;
+}
 ;;SETTER
-static inline fn Printer_setMaxDelDigits(DifferencePrinter *p, u32 d) { (*p).maxDelDigits = d; }
+static inline fn Printer_setMaxDelDigits(DifferencePrinter *p, u32 d)
+{
+    (*p).maxDelDigits = d;
+}
 
 /** Returns the decimal digit length of v (minimum 1). */
 static u32 printerDigitCount(u64 v) {
@@ -61,56 +94,102 @@ static u32 printerDigitCount(u64 v) {
 }
 
 ;;GETTER
-static const char *WatchEv_rel(const FileWatchEvent *e) { return (*e).relativePath; }
+static string WatchEv_rel(const FileWatchEvent *e)
+{
+    return (*e).relativePath;
+}
 ;;GETTER
-static inline const char *WatchEv_path(const FileWatchEvent *e) { return (*e).path; }
+static inline string WatchEv_path(const FileWatchEvent *e)
+{
+    return (*e).path;
+}
 ;;GETTER
-static inline FileEventType WatchEv_type(const FileWatchEvent *e) { return (*e).type; }
+static inline FileEventType WatchEv_type(const FileWatchEvent *e)
+{
+    return (*e).type;
+}
 ;;GETTER
-static inline i64 WatchEv_epoch(const FileWatchEvent *e) { return (*e).epochSeconds; }
+static inline i64 WatchEv_epoch(const FileWatchEvent *e)
+{
+    return (*e).epochSeconds;
+}
 ;;GETTER
-static inline i64 WatchEv_size(const FileWatchEvent *e) { return (*e).fileSize; }
+static inline i64 WatchEv_size(const FileWatchEvent *e)
+{
+    return (*e).fileSize;
+}
 ;;GETTER
-static inline const char *Meta_path(const TerminalDiffMeta *m) { return (*m).path; }
+static inline string Meta_path(const TerminalDiffMeta *m)
+{
+    return (*m).path;
+}
 ;;GETTER
-static inline const char *Meta_event(const TerminalDiffMeta *m) { return (*m).eventLabel; }
+static inline string Meta_event(const TerminalDiffMeta *m)
+{
+    return (*m).eventLabel;
+}
 ;;GETTER
-static inline const char *Meta_timestamp(const TerminalDiffMeta *m) { return (*m).timestamp; }
+static inline string Meta_timestamp(const TerminalDiffMeta *m)
+{
+    return (*m).timestamp;
+}
 ;;GETTER
-static inline u32 Meta_added(const TerminalDiffMeta *m) { return (*m).linesAdded; }
+static inline u32 Meta_added(const TerminalDiffMeta *m)
+{
+    return (*m).linesAdded;
+}
 ;;GETTER
-static inline u32 Meta_removed(const TerminalDiffMeta *m) { return (*m).linesRemoved; }
+static inline u32 Meta_removed(const TerminalDiffMeta *m)
+{
+    return (*m).linesRemoved;
+}
 ;;GETTER
-static inline const TerminalDiffHunk *Diff_hunks(const DiffResult *d) { return (*d).hunks; }
+static inline const TerminalDiffHunk *Diff_hunks(const DiffResult *d)
+{
+    return (*d).hunks;
+}
 ;;GETTER
-static inline bytes Diff_hunkCount(const DiffResult *d) { return (*d).hunkCount; }
+static inline bytes Diff_hunkCount(const DiffResult *d)
+{
+    return (*d).hunkCount;
+}
 ;;GETTER
-static inline u32 Diff_added(const DiffResult *d) { return (*d).linesAdded; }
+static inline u32 Diff_added(const DiffResult *d)
+{
+    return (*d).linesAdded;
+}
 ;;GETTER
-static inline u32 Diff_removed(const DiffResult *d) { return (*d).linesRemoved; }
+static inline u32 Diff_removed(const DiffResult *d)
+{
+    return (*d).linesRemoved;
+}
 
 /** Emits a 24-bit foreground SGR sequence when color is active. */
 static fn emitRgbFg(FILE *out, bool useColor, u32 c) {
     if (!useColor || !TERMINAL_COLOR_IS_SET(c))
         return;
-    fprintf(out, "\x1b[38;2;%u;%u;%um",
-            (unsigned) TERMINAL_COLOR_RED(c),
-            (unsigned) TERMINAL_COLOR_GREEN(c),
-            (unsigned) TERMINAL_COLOR_BLUE(c));
+    utf8 sgr[32];
+    snprintf(sgr, sizeof(sgr), "\x1b[38;2;%u;%u;%um",
+             (u32) TERMINAL_COLOR_RED(c),
+             (u32) TERMINAL_COLOR_GREEN(c),
+             (u32) TERMINAL_COLOR_BLUE(c));
+    fputs(sgr, out);
 }
 
 /** Emits a 24-bit background SGR sequence when color is active. */
 static fn emitRgbBg(FILE *out, bool useColor, u32 c) {
     if (!useColor || !TERMINAL_COLOR_IS_SET(c))
         return;
-    fprintf(out, "\x1b[48;2;%u;%u;%um",
-            (unsigned) TERMINAL_COLOR_RED(c),
-            (unsigned) TERMINAL_COLOR_GREEN(c),
-            (unsigned) TERMINAL_COLOR_BLUE(c));
+    utf8 sgr[32];
+    snprintf(sgr, sizeof(sgr), "\x1b[48;2;%u;%u;%um",
+             (u32) TERMINAL_COLOR_RED(c),
+             (u32) TERMINAL_COLOR_GREEN(c),
+             (u32) TERMINAL_COLOR_BLUE(c));
+    fputs(sgr, out);
 }
 
 /** Maps FileEventType bits to a compact pill label. */
-static const char *eventPillLabel(FileEventType type) {
+static string eventPillLabel(FileEventType type) {
     if (type & FILE_EVENT_DELETED)
         return "DEL";
     if (type & FILE_EVENT_CREATED)
@@ -132,8 +211,8 @@ static u32 eventPillBg(FileEventType type) {
 }
 
 /** Formats wall-clock epoch seconds into local HH:MM:SS. */
-static fn formatTimestamp(i64 epochSec, char *buf, bytes cap) {
-    time_t t = epochSec > 0 ? (time_t) epochSec : time(nullptr);
+static fn formatTimestamp(i64 epochSec, utf8 *buf, bytes cap) {
+    timestamp t = epochSec > 0 ? (timestamp) epochSec : time(nullptr);
     struct tm tmBuf;
     if (localtime_r(&t, &tmBuf))
         strftime(buf, cap, "%H:%M:%S", &tmBuf);
@@ -152,15 +231,15 @@ static fn differenceHeaderHook(const TerminalDiffPanel *panel,
     TerminalDiffTheme th = TerminalDiffPanel_theme(panel);
     bool color = th.useColor;
     bool uni = th.useUnicodeBorder;
-    const char *path = (meta && Meta_path(meta)) ? Meta_path(meta) : "(unnamed)";
-    const char *ev = (meta && Meta_event(meta)) ? Meta_event(meta) : "EDIT";
-    const char *ts = (meta && Meta_timestamp(meta)) ? Meta_timestamp(meta) : "";
+    string path = (meta && Meta_path(meta)) ? Meta_path(meta) : "(unnamed)";
+    string ev = (meta && Meta_event(meta)) ? Meta_event(meta) : "EDIT";
+    string ts = (meta && Meta_timestamp(meta)) ? Meta_timestamp(meta) : "";
     u32 added = meta ? Meta_added(meta) : 0u;
     u32 removed = meta ? Meta_removed(meta) : 0u;
     u64 seq = pr ? Printer_editCounter(pr) : 0u;
     i64 sizeBytes = pr ? Printer_lastFileSize(pr) : -1;
     FileEventType evType = pr ? Printer_lastEventType(pr) : FILE_EVENT_MODIFIED;
-    const char *layoutTag = (resolvedLayout == TERMINAL_DIFF_LAYOUT_SIDE_BY_SIDE) ? "side-by-side" : "unified";
+    string layoutTag = (resolvedLayout == TERMINAL_DIFF_LAYOUT_SIDE_BY_SIDE) ? "side-by-side" : "unified";
 
     fputc('\n', out);
     emitRgbFg(out, color, TERMINAL_RGB(88, 96, 112));
@@ -172,33 +251,40 @@ static fn differenceHeaderHook(const TerminalDiffPanel *panel,
 
     u32 addW = (pr && Printer_maxAddDigits(pr) > 0u) ? Printer_maxAddDigits(pr) : printerDigitCount(added);
     u32 delW = (pr && Printer_maxDelDigits(pr) > 0u) ? Printer_maxDelDigits(pr) : printerDigitCount(removed);
-    char addStr[24];
-    char delStr[24];
+    utf8 addStr[24];
+    utf8 delStr[24];
     snprintf(addStr, sizeof(addStr), "+%u", (unsigned) added);
     snprintf(delStr, sizeof(delStr), "-%u", (unsigned) removed);
 
     emitRgbFg(out, color, TERMINAL_RGB(130, 140, 156));
-    fprintf(out, "#%llu ", (unsigned long long) seq);
+    utf8 seg[128];
+    snprintf(seg, sizeof(seg), "#%" PRIu64 " ", seq);
+    fputs(seg, out);
 
     emitRgbBg(out, color, eventPillBg(evType));
     emitRgbFg(out, color, TERMINAL_RGB(250, 252, 255));
     if (color)
         fputs("\x1b[1m", out);
-    fprintf(out, " %s ", ev);
+    fputc(' ', out);
+    fputs(ev, out);
+    fputc(' ', out);
     if (color)
         fputs("\x1b[0m", out);
 
     emitRgbFg(out, color, TERMINAL_RGB(240, 246, 252));
     if (color)
         fputs("\x1b[1m", out);
-    fprintf(out, " %s", path);
+    fputc(' ', out);
+    fputs(path, out);
     if (color)
         fputs("\x1b[0m", out);
 
     emitRgbFg(out, color, TERMINAL_RGB(126, 231, 135));
-    fprintf(out, "  %*s", (int) (addW + 1u), addStr);
+    snprintf(seg, sizeof(seg), "  %*s", (i32) (addW + 1u), addStr);
+    fputs(seg, out);
     emitRgbFg(out, color, TERMINAL_RGB(255, 123, 114));
-    fprintf(out, " %*s", (int) (delW + 1u), delStr);
+    snprintf(seg, sizeof(seg), " %*s", (i32) (delW + 1u), delStr);
+    fputs(seg, out);
 
     u32 total = added + removed;
     if (total > 0) {
@@ -219,11 +305,16 @@ static fn differenceHeaderHook(const TerminalDiffPanel *panel,
     }
 
     emitRgbFg(out, color, TERMINAL_RGB(139, 148, 158));
-    if (sizeBytes >= 0)
-        fprintf(out, "  %lldB", (long long) sizeBytes);
-    if (ts[0] != '\0')
-        fprintf(out, "  %s", ts);
-    fprintf(out, "  [%s %uc]", layoutTag, (unsigned) columns);
+    if (sizeBytes >= 0) {
+        snprintf(seg, sizeof(seg), "  %" PRId64 "B", sizeBytes);
+        fputs(seg, out);
+    }
+    if (ts[0] != '\0') {
+        fputs("  ", out);
+        fputs(ts, out);
+    }
+    snprintf(seg, sizeof(seg), "  [%s %uc]", layoutTag, columns);
+    fputs(seg, out);
     if (color)
         fputs("\x1b[0m", out);
     fputc('\n', out);
@@ -299,7 +390,7 @@ bool DifferencePrinter_print(DifferencePrinter *printer,
     if (dd > Printer_maxDelDigits(printer))
         Printer_setMaxDelDigits(printer, dd);
 
-    char tsBuf[32];
+    utf8 tsBuf[32];
     formatTimestamp(WatchEv_epoch(event), tsBuf, sizeof(tsBuf));
 
     TerminalDiffMeta meta;

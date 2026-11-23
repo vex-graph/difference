@@ -7,7 +7,7 @@
 #include "ui/panel/terminal_diff_panel.h"
 #include "diff_engine.h"
 
-// difference_printer.h — custom realtime watch diff printer built on determinant's TerminalDiffPanel.
+/** difference_printer.h, custom realtime watch diff printer built on determinant's TerminalDiffPanel. */
 
 typedef struct DifferencePrinter {
     TerminalDiffPanel panel;

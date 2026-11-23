@@ -4,11 +4,13 @@
 #include "vex.h"
 #include "ui/panel/terminal_diff_panel.h"
 
-// difference_settings.h — persisted difference TUI settings under the R1 manifest.
-//
-// One bounded key=value record stored at the manifest app-data root
-// (~/Library/Application Support/vexgraph/difference/settings). A missing file
-// yields defaults; a malformed line rejects WITHOUT applying a partial record.
+/**
+ * difference_settings.h, persisted difference TUI settings under the R1 manifest.
+ *
+ * One bounded key=value record stored at the manifest app-data root
+ * (~/Library/Application Support/vexgraph/difference/settings). A missing file
+ * yields defaults; a malformed line rejects WITHOUT applying a partial record.
+ */
 
 enum {
     DIFFERENCE_SETTINGS_CONTEXT_MIN = 0u,
@@ -53,13 +55,13 @@ u32 DifferenceSettings_getContextLines(const DifferenceSettings *self);
 u32 DifferenceSettings_getWorkspaceLimitMb(const DifferenceSettings *self);
 u32 DifferenceSettings_getMaxEdits(const DifferenceSettings *self);
 
-// Resolve <app-data root>/settings via MANIFEST(MANIFEST_APP_DATA, "vexgraph", "difference").
-bool DifferenceSettings_resolvePath(char *dest, bytes cap);
+/** Resolve <app-data root>/settings via MANIFEST(MANIFEST_APP_DATA, "vexgraph", "difference"). */
+bool DifferenceSettings_resolvePath(utf8 *dest, bytes cap);
 
-// Load into self. Missing file leaves defaults and returns true; malformed file returns false and applies nothing.
-bool DifferenceSettings_load(DifferenceSettings *self, const char *path);
+/** Load into self. Missing file leaves defaults and returns true; malformed file returns false and applies nothing. */
+bool DifferenceSettings_load(DifferenceSettings *self, string path);
 
-// Atomic save (temp + fsync + rename under the same directory).
-bool DifferenceSettings_save(const DifferenceSettings *self, const char *path);
+/** Atomic save (temp + fsync + rename under the same directory). */
+bool DifferenceSettings_save(const DifferenceSettings *self, string path);
 
 #endif

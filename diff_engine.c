@@ -3,10 +3,12 @@
 
 #include <string.h>
 #include "nio/mem.h"
+#include "nio/difference_memory.h"
 #include "type/re_type.h"
 
-;;DEFINITION
 #define TYPE_DIFF_ENGINE Type_make(PROJ_RELATIONAL_ENGINE, FORM_SINGLETON, 40u)
+
+;;DEFINITION
 /**
  * ============================================================================
  * DEFINITION: DiffEngine
@@ -27,55 +29,99 @@
  * ============================================================================
  */
 
-typedef struct LineSlice {
-    const char *text;
-    bytes len;
-} LineSlice;
-
-typedef struct EditOp {
-    TerminalDiffLineKind kind;
-    u32 oldLine;
-    u32 newLine;
-    const char *text;
-    bytes len;
-} EditOp;
-
 enum {
     DIFF_MAX_DP_CELLS = 4000000u
 };
 
 ;;SETTER
-static inline fn Span_setStart(TerminalDiffSpan *s, bytes v) { (*s).start = v; }
+static inline fn Span_setStart(TerminalDiffSpan *s, bytes v)
+{
+    (*s).start = v;
+}
 ;;SETTER
-static inline fn Span_setLength(TerminalDiffSpan *s, bytes v) { (*s).length = v; }
+static inline fn Span_setLength(TerminalDiffSpan *s, bytes v)
+{
+    (*s).length = v;
+}
 
 ;;GETTER
-static inline MemoryArena *DiffRes_arena(const DiffResult *r) { return (*r).arena; }
+static inline MemoryArena *DiffRes_arena(const DiffResult *r)
+{
+    return (*r).arena;
+}
 ;;SETTER
-static inline fn DiffRes_setArena(DiffResult *r, MemoryArena *a) { (*r).arena = a; }
+static inline fn DiffRes_setArena(DiffResult *r, MemoryArena *a)
+{
+    (*r).arena = a;
+}
 ;;GETTER
-static inline bool DiffRes_ownsArena(const DiffResult *r) { return (*r).ownsArena; }
+static inline bool DiffRes_ownsArena(const DiffResult *r)
+{
+    return (*r).ownsArena;
+}
 ;;SETTER
-static inline fn DiffRes_setOwnsArena(DiffResult *r, bool o) { (*r).ownsArena = o; }
+static inline fn DiffRes_setOwnsArena(DiffResult *r, bool o)
+{
+    (*r).ownsArena = o;
+}
+;;GETTER
+static inline TerminalDiffHunk *DiffRes_hunks(const DiffResult *r)
+{
+    return (*r).hunks;
+}
 ;;SETTER
-static inline fn DiffRes_setHunks(DiffResult *r, TerminalDiffHunk *h) { (*r).hunks = h; }
+static inline fn DiffRes_setHunks(DiffResult *r, TerminalDiffHunk *h)
+{
+    (*r).hunks = h;
+}
 ;;SETTER
-static inline fn DiffRes_setHunkCount(DiffResult *r, bytes n) { (*r).hunkCount = n; }
+static inline fn DiffRes_setHunkCount(DiffResult *r, bytes n)
+{
+    (*r).hunkCount = n;
+}
+;;GETTER
+static inline TerminalDiffLine *DiffRes_lines(const DiffResult *r)
+{
+    return (*r).lines;
+}
 ;;SETTER
-static inline fn DiffRes_setLines(DiffResult *r, TerminalDiffLine *l) { (*r).lines = l; }
+static inline fn DiffRes_setLines(DiffResult *r, TerminalDiffLine *l)
+{
+    (*r).lines = l;
+}
 ;;SETTER
-static inline fn DiffRes_setLineCount(DiffResult *r, bytes n) { (*r).lineCount = n; }
+static inline fn DiffRes_setLineCount(DiffResult *r, bytes n)
+{
+    (*r).lineCount = n;
+}
+;;GETTER
+static inline TerminalDiffSpan *DiffRes_spans(const DiffResult *r)
+{
+    return (*r).spans;
+}
 ;;SETTER
-static inline fn DiffRes_setSpans(DiffResult *r, TerminalDiffSpan *s) { (*r).spans = s; }
+static inline fn DiffRes_setSpans(DiffResult *r, TerminalDiffSpan *s)
+{
+    (*r).spans = s;
+}
 ;;SETTER
-static inline fn DiffRes_setSpanCount(DiffResult *r, bytes n) { (*r).spanCount = n; }
+static inline fn DiffRes_setSpanCount(DiffResult *r, bytes n)
+{
+    (*r).spanCount = n;
+}
 ;;SETTER
-static inline fn DiffRes_setAdded(DiffResult *r, u32 n) { (*r).linesAdded = n; }
+static inline fn DiffRes_setAdded(DiffResult *r, u32 n)
+{
+    (*r).linesAdded = n;
+}
 ;;SETTER
-static inline fn DiffRes_setRemoved(DiffResult *r, u32 n) { (*r).linesRemoved = n; }
+static inline fn DiffRes_setRemoved(DiffResult *r, u32 n)
+{
+    (*r).linesRemoved = n;
+}
 
 /** Splits text into line slices (without trailing newline) allocated in arena. */
-static LineSlice *splitLines(MemoryArena *arena, const char *text, bytes len, bytes *outCount) {
+static LineSlice *splitLines(MemoryArena *arena, string text, bytes len, bytes *outCount) {
     *outCount = 0;
     if (!arena || !text || len == 0)
         return nullptr;
@@ -127,8 +173,8 @@ static bool lineEq(LineSlice a, LineSlice b) {
 }
 
 /** Computes exact changed inline character/word span on a paired old/new line. */
-static fn computeInlineSpan(const char *oldText, bytes oldLen,
-                            const char *newText, bytes newLen,
+static fn computeInlineSpan(string oldText, bytes oldLen,
+                            string newText, bytes newLen,
                             TerminalDiffSpan *outOldSpan, bool *hasOld,
                             TerminalDiffSpan *outNewSpan, bool *hasNew) {
     *hasOld = false;
@@ -286,8 +332,8 @@ static EditOp *buildEditOps(MemoryArena *arena,
 
 /** Computes grouped hunks and inline word/letter spans into arena using scratch for intermediates. */
 bool DiffEngine_computeIn(MemoryArena *arena, MemoryArena *scratch,
-                          const char *oldText, bytes oldLen,
-                          const char *newText, bytes newLen,
+                          string oldText, bytes oldLen,
+                          string newText, bytes newLen,
                           u32 contextLines,
                           DiffResult *out) {
     if (!out || !arena)
@@ -485,12 +531,12 @@ bool DiffEngine_computeIn(MemoryArena *arena, MemoryArena *scratch,
     return true;
 }
 
-/** Computes grouped hunks and inline word/letter spans in the engine arena without creating a per-diff arena. */
-bool DiffEngine_compute(const char *oldText, bytes oldLen,
-                        const char *newText, bytes newLen,
+/** Computes grouped hunks and inline word/letter spans in Difference's arena without creating a per-diff arena. */
+bool DiffEngine_compute(string oldText, bytes oldLen,
+                        string newText, bytes newLen,
                         u32 contextLines,
                         DiffResult *out) {
-    return DiffEngine_computeIn(Re_arena(), Re_arena(), oldText, oldLen, newText, newLen, contextLines, out);
+    return DiffEngine_computeIn(Difference_arena(), Difference_arena(), oldText, oldLen, newText, newLen, contextLines, out);
 }
 
 /** Releases the DiffResult allocations (or destroys an owned arena if any). */
@@ -502,9 +548,9 @@ fn DiffEngine_free(DiffResult *result) {
         if (DiffRes_ownsArena(result))
             MemoryArena_destroy(arena);
         else {
-            MemoryArena_free(arena, (*result).hunks);
-            MemoryArena_free(arena, (*result).lines);
-            MemoryArena_free(arena, (*result).spans);
+            MemoryArena_free(arena, DiffRes_hunks(result));
+            MemoryArena_free(arena, DiffRes_lines(result));
+            MemoryArena_free(arena, DiffRes_spans(result));
         }
     }
     memset(result, 0, sizeof(*result));

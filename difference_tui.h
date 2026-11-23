@@ -13,7 +13,7 @@
 #include "diff_engine.h"
 #include "difference_settings.h"
 
-// difference_tui.h — size-agnostic TUI viewport for live file-watch diffs.
+/** difference_tui.h, size-agnostic TUI viewport for live file-watch diffs. */
 
 enum {
     DIFFERENCE_TUI_MAX_EDITS = 1024u,
@@ -33,15 +33,15 @@ typedef enum DifferenceOverlayMode {
 
 typedef struct DifferenceEditRecord {
     u64 sequence;
-    char *path;
-    char *relativePath;
-    char eventLabel[16];
-    char timestamp[32];
+    utf8 *path;
+    utf8 *relativePath;
+    utf8 eventLabel[16];
+    utf8 timestamp[32];
     FileEventType eventType;
     i64 fileSize;
-    char *oldText;
+    utf8 *oldText;
     bytes oldLen;
-    char *newText;
+    utf8 *newText;
     bytes newLen;
     DiffResult diff;
     bool expanded;
@@ -60,7 +60,7 @@ typedef struct DifferenceTui {
     TerminalInput input;
     TerminalDiffPanel panel;
     TerminalTextArea *editField;
-    char editBuf[16];
+    utf8 editBuf[16];
     i32 editingSetting;
     i32 outFd;
 
@@ -75,7 +75,7 @@ typedef struct DifferenceTui {
     u32 *frontFg;
     u32 *frontBg;
 
-    const char *watchRoot;
+    string watchRoot;
     bytes trackedFiles;
     u64 editSequence;
     u64 totalAdded;
@@ -131,7 +131,7 @@ typedef struct DifferenceTui {
     any settingsChangedUserdata;
 } DifferenceTui;
 
-bool DifferenceTui_init(DifferenceTui *tui, const char *watchRoot,
+bool DifferenceTui_init(DifferenceTui *tui, string watchRoot,
                         TerminalDiffLayoutMode initialLayout, bool useColor);
 fn DifferenceTui_free(DifferenceTui *tui);
 fn DifferenceTui_setOutputFd(DifferenceTui *tui, i32 fd);
@@ -145,13 +145,13 @@ fn DifferenceTui_setWorkspaceLimitMb(DifferenceTui *tui, u32 limitMb);
 fn DifferenceTui_setMaxEdits(DifferenceTui *tui, u32 maxEdits);
 bool DifferenceTui_pushEdit(DifferenceTui *tui,
                             const FileWatchEvent *event,
-                            const char *oldText, bytes oldLen,
-                            const char *newText, bytes newLen);
+                            string oldText, bytes oldLen,
+                            string newText, bytes newLen);
 fn DifferenceTui_clearEdits(DifferenceTui *tui);
 bool DifferenceTui_resize(DifferenceTui *tui, bytes width, bytes height);
 fn DifferenceTui_renderFrame(DifferenceTui *tui);
 fn DifferenceTui_handleInputByte(DifferenceTui *tui, i32 byte);
-fn DifferenceTui_handleKeySeq(DifferenceTui *tui, const char *seq, bytes len);
+fn DifferenceTui_handleKeySeq(DifferenceTui *tui, string seq, bytes len);
 i32 DifferenceTui_run(DifferenceTui *tui, FileEventWatcher *watcher);
 
 #endif

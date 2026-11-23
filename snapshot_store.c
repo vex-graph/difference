@@ -9,8 +9,9 @@
 #include "nio/mem.h"
 #include "type/re_type.h"
 
-;;DEFINITION
 #define TYPE_SNAPSHOT_STORE Type_make(PROJ_RELATIONAL_ENGINE, FORM_SINGLETON, 41u)
+
+;;DEFINITION
 /**
  * ============================================================================
  * DEFINITION: SnapshotStore
@@ -42,77 +43,179 @@ enum {
 #define SNAPSHOT_TOMBSTONE (~((bytes) 0u))
 
 ;;GETTER
-static inline MemoryArena *Store_arena(const SnapshotStore *s) { return (*s).arena; }
+static inline MemoryArena *Store_arena(const SnapshotStore *s)
+{
+    return (*s).arena;
+}
 ;;SETTER
-static inline fn Store_setArena(SnapshotStore *s, MemoryArena *a) { (*s).arena = a; }
+static inline fn Store_setArena(SnapshotStore *s, MemoryArena *a)
+{
+    (*s).arena = a;
+}
 ;;GETTER
-static inline MemoryArena *Store_scratch(const SnapshotStore *s) { return (*s).scratch; }
+static inline MemoryArena *Store_scratch(const SnapshotStore *s)
+{
+    return (*s).scratch;
+}
 ;;SETTER
-static inline fn Store_setScratch(SnapshotStore *s, MemoryArena *a) { (*s).scratch = a; }
+static inline fn Store_setScratch(SnapshotStore *s, MemoryArena *a)
+{
+    (*s).scratch = a;
+}
 ;;GETTER
-static inline bytes Store_arenaBytes(const SnapshotStore *s) { return (*s).arenaBytes; }
+static inline bytes Store_arenaBytes(const SnapshotStore *s)
+{
+    return (*s).arenaBytes;
+}
 ;;SETTER
-static inline fn Store_setArenaBytes(SnapshotStore *s, bytes n) { (*s).arenaBytes = n; }
+static inline fn Store_setArenaBytes(SnapshotStore *s, bytes n)
+{
+    (*s).arenaBytes = n;
+}
 ;;GETTER
-static inline SnapshotEntry *Store_entries(const SnapshotStore *s) { return (*s).entries; }
+static inline SnapshotEntry *Store_entries(const SnapshotStore *s)
+{
+    return (*s).entries;
+}
 ;;SETTER
-static inline fn Store_setEntries(SnapshotStore *s, SnapshotEntry *e) { (*s).entries = e; }
+static inline fn Store_setEntries(SnapshotStore *s, SnapshotEntry *e)
+{
+    (*s).entries = e;
+}
 ;;GETTER
-static inline bytes *Store_buckets(const SnapshotStore *s) { return (*s).buckets; }
+static inline bytes *Store_buckets(const SnapshotStore *s)
+{
+    return (*s).buckets;
+}
 ;;SETTER
-static inline fn Store_setBuckets(SnapshotStore *s, bytes *b) { (*s).buckets = b; }
+static inline fn Store_setBuckets(SnapshotStore *s, bytes *b)
+{
+    (*s).buckets = b;
+}
 ;;GETTER
-static inline bytes Store_count(const SnapshotStore *s) { return (*s).count; }
+static inline bytes Store_count(const SnapshotStore *s)
+{
+    return (*s).count;
+}
 ;;SETTER
-static inline fn Store_setCount(SnapshotStore *s, bytes c) { (*s).count = c; }
+static inline fn Store_setCount(SnapshotStore *s, bytes c)
+{
+    (*s).count = c;
+}
 ;;GETTER
-static inline bytes Store_capacity(const SnapshotStore *s) { return (*s).capacity; }
+static inline bytes Store_capacity(const SnapshotStore *s)
+{
+    return (*s).capacity;
+}
 ;;SETTER
-static inline fn Store_setCapacity(SnapshotStore *s, bytes c) { (*s).capacity = c; }
+static inline fn Store_setCapacity(SnapshotStore *s, bytes c)
+{
+    (*s).capacity = c;
+}
 ;;GETTER
-static inline bytes Store_bucketCap(const SnapshotStore *s) { return (*s).bucketCap; }
+static inline bytes Store_bucketCap(const SnapshotStore *s)
+{
+    return (*s).bucketCap;
+}
 ;;SETTER
-static inline fn Store_setBucketCap(SnapshotStore *s, bytes c) { (*s).bucketCap = c; }
+static inline fn Store_setBucketCap(SnapshotStore *s, bytes c)
+{
+    (*s).bucketCap = c;
+}
 ;;GETTER
-static inline bytes Store_tombstones(const SnapshotStore *s) { return (*s).tombstones; }
+static inline bytes Store_tombstones(const SnapshotStore *s)
+{
+    return (*s).tombstones;
+}
 ;;SETTER
-static inline fn Store_setTombstones(SnapshotStore *s, bytes t) { (*s).tombstones = t; }
+static inline fn Store_setTombstones(SnapshotStore *s, bytes t)
+{
+    (*s).tombstones = t;
+}
 ;;GETTER
-static inline bytes Store_maxBytes(const SnapshotStore *s) { return (*s).maxFileBytes; }
+static inline bytes Store_maxBytes(const SnapshotStore *s)
+{
+    return (*s).maxFileBytes;
+}
 ;;SETTER
-static inline fn Store_setMaxBytes(SnapshotStore *s, bytes m) { (*s).maxFileBytes = m; }
+static inline fn Store_setMaxBytes(SnapshotStore *s, bytes m)
+{
+    (*s).maxFileBytes = m;
+}
 ;;GETTER
-static inline bytes Store_maxWorkspaceBytes(const SnapshotStore *s) { return (*s).maxWorkspaceBytes; }
+static inline bytes Store_maxWorkspaceBytes(const SnapshotStore *s)
+{
+    return (*s).maxWorkspaceBytes;
+}
 ;;SETTER
-static inline fn Store_setMaxWorkspaceBytes(SnapshotStore *s, bytes m) { (*s).maxWorkspaceBytes = m; }
+static inline fn Store_setMaxWorkspaceBytes(SnapshotStore *s, bytes m)
+{
+    (*s).maxWorkspaceBytes = m;
+}
 ;;GETTER
-static inline bytes Store_totalDataBytes(const SnapshotStore *s) { return (*s).totalDataBytes; }
+static inline bytes Store_totalDataBytes(const SnapshotStore *s)
+{
+    return (*s).totalDataBytes;
+}
 ;;SETTER
-static inline fn Store_setTotalDataBytes(SnapshotStore *s, bytes n) { (*s).totalDataBytes = n; }
+static inline fn Store_setTotalDataBytes(SnapshotStore *s, bytes n)
+{
+    (*s).totalDataBytes = n;
+}
 ;;GETTER
-static inline const char *Dirent_name(const struct dirent *d) { return (*d).d_name; }
+static inline string Dirent_name(const struct dirent *d)
+{
+    return (*d).d_name;
+}
 
 ;;GETTER
-static inline SnapshotStore *Seeder_store(const SnapshotSeeder *s) { return (*s).store; }
+static inline SnapshotStore *Seeder_store(const SnapshotSeeder *s)
+{
+    return (*s).store;
+}
 ;;SETTER
-static inline fn Seeder_setStore(SnapshotSeeder *s, SnapshotStore *st) { (*s).store = st; }
+static inline fn Seeder_setStore(SnapshotSeeder *s, SnapshotStore *st)
+{
+    (*s).store = st;
+}
 ;;GETTER
-static inline const FileEventWatcher *Seeder_filter(const SnapshotSeeder *s) { return (*s).filter; }
+static inline const FileEventWatcher *Seeder_filter(const SnapshotSeeder *s)
+{
+    return (*s).filter;
+}
 ;;SETTER
-static inline fn Seeder_setFilter(SnapshotSeeder *s, const FileEventWatcher *f) { (*s).filter = f; }
+static inline fn Seeder_setFilter(SnapshotSeeder *s, const FileEventWatcher *f)
+{
+    (*s).filter = f;
+}
 ;;GETTER
-static inline SnapshotSeedFrame *Seeder_stackMut(SnapshotSeeder *s) { return (*s).stack; }
+static inline SnapshotSeedFrame *Seeder_stackMut(SnapshotSeeder *s)
+{
+    return (*s).stack;
+}
 ;;GETTER
-static inline bytes Seeder_depth(const SnapshotSeeder *s) { return (*s).depth; }
+static inline bytes Seeder_depth(const SnapshotSeeder *s)
+{
+    return (*s).depth;
+}
 ;;SETTER
-static inline fn Seeder_setDepth(SnapshotSeeder *s, bytes d) { (*s).depth = d; }
+static inline fn Seeder_setDepth(SnapshotSeeder *s, bytes d)
+{
+    (*s).depth = d;
+}
 ;;GETTER
-static inline bool Seeder_active(const SnapshotSeeder *s) { return (*s).active; }
+static inline bool Seeder_active(const SnapshotSeeder *s)
+{
+    return (*s).active;
+}
 ;;SETTER
-static inline fn Seeder_setActive(SnapshotSeeder *s, bool a) { (*s).active = a; }
+static inline fn Seeder_setActive(SnapshotSeeder *s, bool a)
+{
+    (*s).active = a;
+}
 
 /** Computes 64-bit FNV-1a hash of a byte slice. */
-static u64 snapHash(const char *s, bytes len) {
+static u64 snapHash(string s, bytes len) {
     u64 h = 14695981039346656037ULL;
     for (bytes i = 0u; i < len; i++) {
         h ^= (u64) (u8) s[i];
@@ -130,7 +233,7 @@ static bytes nextPow2(bytes n) {
 }
 
 /** Compares two NUL-terminated strings for exact byte equality. */
-static bool snapStrEq(const char *a, const char *b) {
+static bool snapStrEq(string a, string b) {
     if (!a || !b)
         return false;
     bytes la = strlen(a);
@@ -141,7 +244,7 @@ static bool snapStrEq(const char *a, const char *b) {
 }
 
 /** Returns true if str begins with prefix. */
-static bool snapStartsWith(const char *str, const char *prefix) {
+static bool snapStartsWith(string str, string prefix) {
     if (!str || !prefix)
         return false;
     bytes plen = strlen(prefix);
@@ -151,7 +254,7 @@ static bool snapStartsWith(const char *str, const char *prefix) {
 }
 
 /** Skips common build, cache, and VCS directories during initial recursive seeding. */
-static bool isSkippedDirName(const char *name) {
+static bool isSkippedDirName(string name) {
     if (!name || name[0] == '\0' || name[0] == '.')
         return true;
     if (snapStartsWith(name, "cmake-build-"))
@@ -164,7 +267,7 @@ static bool isSkippedDirName(const char *name) {
 }
 
 /** Checks the first 4 KiB for NUL bytes to avoid diffing binary files. */
-static bool looksBinary(const char *buf, bytes len) {
+static bool looksBinary(string buf, bytes len) {
     bytes probe = len < SNAPSHOT_PROBE_BYTES ? len : SNAPSHOT_PROBE_BYTES;
     for (bytes i = 0u; i < probe; i++)
         if (buf[i] == '\0')
@@ -185,7 +288,7 @@ static bool bucketInsertRaw(bytes *buckets, bytes bucketCap,
 }
 
 /** Looks up a path in the hash table; returns entry index or SNAPSHOT_TOMBSTONE if absent. */
-static bytes storeLookup(const SnapshotStore *store, const char *path,
+static bytes storeLookup(const SnapshotStore *store, string path,
                          bytes pathLen, u64 hash, bytes *outBucket) {
     bytes *buckets = Store_buckets(store);
     bytes bucketCap = Store_bucketCap(store);
@@ -235,7 +338,7 @@ static bool snapshotCompact(SnapshotStore *store, bytes minExtraBytes) {
     while (nextSize < MemoryArena_capacityFor(liveBytes * 2u))
         nextSize *= 2u;
 
-    MemoryArena *nextArena = MemoryArena_create(nextSize);
+    MemoryArena *nextArena = MemoryArena(nextSize);
     if (!nextArena)
         return false;
 
@@ -251,8 +354,8 @@ static bool snapshotCompact(SnapshotStore *store, bytes minExtraBytes) {
         memset(nextBuckets, 0, nextBucketCap * sizeof(bytes));
         for (bytes i = 0u; i < count; i++) {
             bytes plen = oldEntries[i].pathLen;
-            char *pCopy = (char*) MemoryArena_alloc(nextArena, TYPE_SNAPSHOT_STORE, plen + 1u);
-            char *dCopy = (char*) MemoryArena_alloc(nextArena, TYPE_SNAPSHOT_STORE, oldEntries[i].length + 1u);
+            utf8 *pCopy = (utf8*) MemoryArena_alloc(nextArena, TYPE_SNAPSHOT_STORE, plen + 1u);
+            utf8 *dCopy = (utf8*) MemoryArena_alloc(nextArena, TYPE_SNAPSHOT_STORE, oldEntries[i].length + 1u);
             if (!pCopy || !dCopy) {
                 MemoryArena_destroy(nextArena);
                 return false;
@@ -300,8 +403,8 @@ fn SnapshotStore_init(SnapshotStore *store, bytes maxFileBytes) {
         return;
     memset(store, 0, sizeof(*store));
     Store_setArenaBytes(store, SNAPSHOT_PERSIST_ARENA_BYTES);
-    Store_setArena(store, MemoryArena_create(SNAPSHOT_PERSIST_ARENA_BYTES));
-    Store_setScratch(store, MemoryArena_create(SNAPSHOT_SCRATCH_ARENA_BYTES));
+    Store_setArena(store, MemoryArena(SNAPSHOT_PERSIST_ARENA_BYTES));
+    Store_setScratch(store, MemoryArena(SNAPSHOT_SCRATCH_ARENA_BYTES));
     Store_setMaxBytes(store, maxFileBytes > 0u ? maxFileBytes : (bytes) SNAPSHOT_DEFAULT_MAX_FILE);
     Store_setMaxWorkspaceBytes(store, (bytes) SNAPSHOT_DEFAULT_MAX_WORKSPACE_BYTES);
     Store_setTotalDataBytes(store, 0u);
@@ -337,7 +440,7 @@ fn SnapshotStore_free(SnapshotStore *store) {
 }
 
 /** Reads a text file into the scratch arena, probing the first 4 KiB before full allocation. */
-static char *readFileKnownSize(SnapshotStore *store, const char *path,
+static utf8 *readFileKnownSize(SnapshotStore *store, string path,
                                bytes knownSize, bool hasSize,
                                bytes *outLen, bool *outBinary) {
     if (outLen)
@@ -365,7 +468,7 @@ static char *readFileKnownSize(SnapshotStore *store, const char *path,
     if (!f)
         return nullptr;
 
-    char head[SNAPSHOT_PROBE_BYTES];
+    utf8 head[SNAPSHOT_PROBE_BYTES];
     bytes probeLen = sz < SNAPSHOT_PROBE_BYTES ? sz : SNAPSHOT_PROBE_BYTES;
     bytes nHead = probeLen > 0u ? fread(head, 1u, probeLen, f) : 0u;
     if (looksBinary(head, nHead)) {
@@ -375,10 +478,10 @@ static char *readFileKnownSize(SnapshotStore *store, const char *path,
         return nullptr;
     }
 
-    char *buf = (char*) MemoryArena_alloc(scratch, TYPE_SNAPSHOT_STORE, sz + 1u);
+    utf8 *buf = (utf8*) MemoryArena_alloc(scratch, TYPE_SNAPSHOT_STORE, sz + 1u);
     if (!buf) {
         MemoryArena_freeAll(scratch);
-        buf = (char*) MemoryArena_alloc(scratch, TYPE_SNAPSHOT_STORE, sz + 1u);
+        buf = (utf8*) MemoryArena_alloc(scratch, TYPE_SNAPSHOT_STORE, sz + 1u);
         if (!buf) {
             fclose(f);
             return nullptr;
@@ -400,12 +503,12 @@ static char *readFileKnownSize(SnapshotStore *store, const char *path,
 }
 
 /** Reads a text file into the scratch arena; sets outBinary on NUL bytes. */
-char *SnapshotStore_readFile(SnapshotStore *store, const char *path, bytes *outLen, bool *outBinary) {
+utf8 *SnapshotStore_readFile(SnapshotStore *store, string path, bytes *outLen, bool *outBinary) {
     return readFileKnownSize(store, path, 0u, false, outLen, outBinary);
 }
 
 /** Releases a single scratch buffer in O(1) without rebuilding slab freelists. */
-fn SnapshotStore_freeBuf(SnapshotStore *store, char *buf) {
+fn SnapshotStore_freeBuf(SnapshotStore *store, utf8 *buf) {
     if (!store || !buf)
         return;
     MemoryArena *scratch = Store_scratch(store);
@@ -414,7 +517,7 @@ fn SnapshotStore_freeBuf(SnapshotStore *store, char *buf) {
 }
 
 /** Finds an existing snapshot by exact path in O(1) average time, or returns nullptr. */
-const SnapshotEntry *SnapshotStore_find(const SnapshotStore *store, const char *path) {
+const SnapshotEntry *SnapshotStore_find(const SnapshotStore *store, string path) {
     if (!store || !path)
         return nullptr;
     bytes pathLen = strlen(path);
@@ -426,7 +529,7 @@ const SnapshotEntry *SnapshotStore_find(const SnapshotStore *store, const char *
 }
 
 /** Inserts or replaces a file's snapshot content with an owned copy in the persistent arena. */
-bool SnapshotStore_put(SnapshotStore *store, const char *path, const char *data, bytes len) {
+bool SnapshotStore_put(SnapshotStore *store, string path, string data, bytes len) {
     if (!store || !path)
         return false;
 
@@ -441,7 +544,7 @@ bool SnapshotStore_put(SnapshotStore *store, const char *path, const char *data,
         bytes nextTotal = (curTotal >= oldLen ? curTotal - oldLen : 0u) + len;
         if (maxWs > 0u && nextTotal > maxWs)
             return false;
-        char *dataCopy = (char*) persistAlloc(store, len + 1u);
+        utf8 *dataCopy = (utf8*) persistAlloc(store, len + 1u);
         if (!dataCopy)
             return false;
         if (len > 0u && data)
@@ -500,8 +603,8 @@ bool SnapshotStore_put(SnapshotStore *store, const char *path, const char *data,
             }
         }
 
-        char *pathCopy = (char*) MemoryArena_alloc(arena, TYPE_SNAPSHOT_STORE, pathLen + 1u);
-        char *dataCopy = pathCopy ? (char*) MemoryArena_alloc(arena, TYPE_SNAPSHOT_STORE, len + 1u) : nullptr;
+        utf8 *pathCopy = (utf8*) MemoryArena_alloc(arena, TYPE_SNAPSHOT_STORE, pathLen + 1u);
+        utf8 *dataCopy = pathCopy ? (utf8*) MemoryArena_alloc(arena, TYPE_SNAPSHOT_STORE, len + 1u) : nullptr;
         if (!pathCopy || !dataCopy) {
             MemoryArena_free(arena, grownEntries);
             MemoryArena_free(arena, grownBuckets);
@@ -553,7 +656,7 @@ bool SnapshotStore_put(SnapshotStore *store, const char *path, const char *data,
 }
 
 /** Removes a file's snapshot entry on deletion while preserving O(1) hash indices. */
-bool SnapshotStore_remove(SnapshotStore *store, const char *path) {
+bool SnapshotStore_remove(SnapshotStore *store, string path) {
     if (!store || !path)
         return false;
     MemoryArena *arena = Store_arena(store);
@@ -593,7 +696,7 @@ bool SnapshotStore_remove(SnapshotStore *store, const char *path) {
 
 /** Begins an incremental directory walk for non-blocking TUI snapshot seeding. */
 bool SnapshotSeeder_begin(SnapshotSeeder *seeder, SnapshotStore *store,
-                          const char *rootDir, const FileEventWatcher *filter) {
+                          string rootDir, const FileEventWatcher *filter) {
     if (!seeder || !store || !rootDir || !rootDir[0])
         return false;
     memset(seeder, 0, sizeof(*seeder));
@@ -636,11 +739,11 @@ bool SnapshotSeeder_step(SnapshotSeeder *seeder, bytes maxFiles) {
             continue;
         }
 
-        const char *name = Dirent_name(ent);
+        string name = Dirent_name(ent);
         if (snapStrEq(name, ".") || snapStrEq(name, ".."))
             continue;
 
-        char full[FILE_PATH_MAX];
+        utf8 full[FILE_PATH_MAX];
         i32 n = snprintf(full, sizeof(full), "%s/%s", stack[top].dirPath, name);
         if (n <= 0 || (bytes) n >= sizeof(full))
             continue;
@@ -670,7 +773,7 @@ bool SnapshotSeeder_step(SnapshotSeeder *seeder, bytes maxFiles) {
 
         bytes len = 0u;
         bool isBin = false;
-        char *buf = readFileKnownSize(store, full, (bytes) st.st_size, true, &len, &isBin);
+        utf8 *buf = readFileKnownSize(store, full, (bytes) st.st_size, true, &len, &isBin);
         if (buf) {
             (discard) SnapshotStore_put(store, full, buf, len);
             SnapshotStore_freeBuf(store, buf);
@@ -701,7 +804,7 @@ fn SnapshotSeeder_finish(SnapshotSeeder *seeder) {
 }
 
 /** Seeds the store synchronously with all text file snapshots under rootDir. */
-bool SnapshotStore_seedDir(SnapshotStore *store, const char *rootDir, const FileEventWatcher *filter) {
+bool SnapshotStore_seedDir(SnapshotStore *store, string rootDir, const FileEventWatcher *filter) {
     if (!store || !rootDir || !rootDir[0])
         return false;
     SnapshotSeeder seeder;

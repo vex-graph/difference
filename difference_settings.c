@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "hotcwap/manifest.h"
+#include "re/primitive/vex-string.h"
 
 ;;DEFINITION
 /**
@@ -17,7 +18,7 @@
  * DEFINITION: DifferenceSettings
  * ============================================================================
  * Persisted settings record for difference stored under the R1 manifest
- * app-data root (MANIFEST(MANIFEST_APP_DATA, "vexgraph", "difference") ->
+ * app-data root (MANIFEST(MANIFEST_APP_DATA, "vexgraph", "difference")  to 
  * ~/Library/Application Support/vexgraph/difference/settings). Load is
  * all-or-nothing: a missing file keeps defaults, while any malformed line or
  * out-of-range value rejects without applying a partial update. Save is atomic
@@ -168,17 +169,17 @@ u32 DifferenceSettings_getMaxEdits(const DifferenceSettings *self) {
 
 /** Mounts and ensures the R1 manifest root for vexgraph/difference once. */
 static bool ensureManifest() {
-    static i32 state = 0;  // 0 = not tried, 1 = mounted, -1 = failed
+    static i32 state = 0;
     if (state == 0)
         state = (MANIFEST(MANIFEST_APP_DATA, "vexgraph", "difference") && MANIFEST_ENSURE()) ? 1 : -1;
     return state == 1;
 }
 
 /** Resolves <manifest app-data root>/settings into caller buffer dest. */
-bool DifferenceSettings_resolvePath(char *dest, bytes cap) {
+bool DifferenceSettings_resolvePath(utf8 *dest, bytes cap) {
     if (dest == nullptr || cap == 0u || !ensureManifest())
         return false;
-    const char *root = MANIFEST_ROOT();
+    string root = MANIFEST_ROOT();
     if (root == nullptr)
         return false;
     i32 written = snprintf(dest, cap, "%s/settings", root);
@@ -186,12 +187,15 @@ bool DifferenceSettings_resolvePath(char *dest, bytes cap) {
 }
 
 /** Parses a strict boolean token ("0", "1", "false", "true"). */
-static bool parseBool(const char *value, bool *out) {
-    if (strcmp(value, "1") == 0 || strcmp(value, "true") == 0) {
+static bool parseBool(string value, bool *out) {
+    string token = value;
+    if (string_equals(token, "1")
+        || string_equals(token, "true")) {
         *out = true;
         return true;
     }
-    if (strcmp(value, "0") == 0 || strcmp(value, "false") == 0) {
+    if (string_equals(token, "0")
+        || string_equals(token, "false")) {
         *out = false;
         return true;
     }
@@ -199,11 +203,11 @@ static bool parseBool(const char *value, bool *out) {
 }
 
 /** Parses a strict unsigned decimal integer with no trailing junk. */
-static bool parseU32(const char *value, u32 *out) {
+static bool parseU32(string value, u32 *out) {
     if (value == nullptr || value[0] < '0' || value[0] > '9')
         return false;
     errno = 0;
-    char *end = nullptr;
+    utf8 *end = nullptr;
     unsigned long parsed = strtoul(value, &end, 10);
     if (errno != 0 || end == value || *end != '\0' || parsed > 0xFFFFFFFFul)
         return false;
@@ -212,7 +216,7 @@ static bool parseU32(const char *value, u32 *out) {
 }
 
 /** Applies one "name=value" line to parsed; returns false on unknown key or invalid value. */
-static bool applyLine(DifferenceSettings *parsed, const char *name, bytes nameLen, const char *value) {
+static bool applyLine(DifferenceSettings *parsed, string name, bytes nameLen, string value) {
     bool flag = false;
     u32 num = 0u;
 
@@ -223,11 +227,12 @@ static bool applyLine(DifferenceSettings *parsed, const char *name, bytes nameLe
         return true;
     }
     if (nameLen == 11u && memcmp(name, "diff_layout", 11u) == 0) {
-        if (strcmp(value, "auto") == 0)
+        string token = value;
+        if (string_equals(token, "auto"))
             return DifferenceSettings_setDiffLayout(parsed, TERMINAL_DIFF_LAYOUT_AUTO);
-        if (strcmp(value, "split") == 0)
+        if (string_equals(token, "split"))
             return DifferenceSettings_setDiffLayout(parsed, TERMINAL_DIFF_LAYOUT_SIDE_BY_SIDE);
-        if (strcmp(value, "unified") == 0)
+        if (string_equals(token, "unified"))
             return DifferenceSettings_setDiffLayout(parsed, TERMINAL_DIFF_LAYOUT_UNIFIED);
         return false;
     }
@@ -268,7 +273,7 @@ static bool applyLine(DifferenceSettings *parsed, const char *name, bytes nameLe
 }
 
 /** Loads persisted settings all-or-nothing; missing file keeps defaults and returns true. */
-bool DifferenceSettings_load(DifferenceSettings *self, const char *path) {
+bool DifferenceSettings_load(DifferenceSettings *self, string path) {
     if (self == nullptr || path == nullptr || path[0] == '\0')
         return false;
     i32 fd = open(path, O_RDONLY | O_NOFOLLOW | O_NONBLOCK);
@@ -281,10 +286,10 @@ bool DifferenceSettings_load(DifferenceSettings *self, const char *path) {
         return false;
     }
 
-    char buffer[DIFFERENCE_SETTINGS_BYTES_MAX + 1u];
+    utf8 buffer[DIFFERENCE_SETTINGS_BYTES_MAX + 1u];
     bytes total = 0u;
     while (total < DIFFERENCE_SETTINGS_BYTES_MAX + 1u) {
-        ssize_t got = read(fd, buffer + total, (DIFFERENCE_SETTINGS_BYTES_MAX + 1u) - total);
+        i64 got = read(fd, buffer + total, (DIFFERENCE_SETTINGS_BYTES_MAX + 1u) - total);
         if (got < 0) {
             close(fd);
             return false;
@@ -330,7 +335,7 @@ bool DifferenceSettings_load(DifferenceSettings *self, const char *path) {
 }
 
 /** Formats TerminalDiffLayoutMode as a stable lowercase settings token. */
-static const char *layoutToken(TerminalDiffLayoutMode mode) {
+static string layoutToken(TerminalDiffLayoutMode mode) {
     if (mode == TERMINAL_DIFF_LAYOUT_SIDE_BY_SIDE)
         return "split";
     if (mode == TERMINAL_DIFF_LAYOUT_UNIFIED)
@@ -339,10 +344,10 @@ static const char *layoutToken(TerminalDiffLayoutMode mode) {
 }
 
 /** Atomically persists DifferenceSettings to path via <path>.tmp + fsync + rename. */
-bool DifferenceSettings_save(const DifferenceSettings *self, const char *path) {
+bool DifferenceSettings_save(const DifferenceSettings *self, string path) {
     if (self == nullptr || path == nullptr || path[0] == '\0')
         return false;
-    char temporary[1040];
+    utf8 temporary[1040];
     i32 written = snprintf(temporary, sizeof(temporary), "%s.tmp", path);
     if (written <= 0 || (bytes) written >= sizeof(temporary))
         return false;
@@ -351,7 +356,7 @@ bool DifferenceSettings_save(const DifferenceSettings *self, const char *path) {
     if (fd < 0)
         return false;
 
-    char body[DIFFERENCE_SETTINGS_BYTES_MAX];
+    utf8 body[DIFFERENCE_SETTINGS_BYTES_MAX];
     i32 length = snprintf(body, sizeof(body),
                           "collapse_mode=%d\n"
                           "diff_layout=%s\n"
@@ -377,7 +382,7 @@ bool DifferenceSettings_save(const DifferenceSettings *self, const char *path) {
 
     bytes offset = 0u;
     while (offset < (bytes) length) {
-        ssize_t put = write(fd, body + offset, (bytes) length - offset);
+        i64 put = write(fd, body + offset, (bytes) length - offset);
         if (put < 0) {
             close(fd);
             unlink(temporary);

@@ -4,7 +4,7 @@ this is being edited as we speak lol
 
 ![difference catching this README being edited live](resources/img.png)
 
-Realtime, size-agnostic terminal diff watcher for any directory — built natively in C23 on top of Vexgraph's Relational Engine (`re`) and `determinant`.
+Realtime, size-agnostic terminal diff watcher for any directory, built natively in C23 on top of Vexgraph's Relational Engine (`re`) and `determinant`.
 
 ```sh
 cd ~/path/to/project && difference
@@ -14,7 +14,7 @@ cd ~/path/to/project && difference
 
 Standard diff workflows (`git diff`, `delta`, IDE diff panels) only show the cumulative change against `HEAD` inside a git repository. When you're iterating quickly in an editor, refactoring across multiple files, or working in a directory that isn't even tracked by git, you lose the chronological story of each individual save.
 
-It also comes up constantly when working with AI agents — especially general-purpose or mobile/non-code agent apps — that edit files directly in your directory without showing you a live diff. Instead of running `git diff` manually after every turn to see what an agent or external tool actually touched, you can keep `difference` open beside your workspace and inspect every modification as it lands.
+It also comes up constantly when working with AI agents, especially general-purpose or mobile/non-code agent apps, that edit files directly in your directory without showing you a live diff. Instead of running `git diff` manually after every turn to see what an agent or external tool actually touched, you can keep `difference` open beside your workspace and inspect every modification as it lands.
 
 Piping a file watcher into a plain terminal diff printer also breaks the moment you resize your terminal window next to an IDE: fixed-width side-by-side columns wrap and garble scrollback, and switching between narrow and wide layouts requires restarting the command.
 
@@ -40,7 +40,7 @@ Piping a file watcher into a plain terminal diff printer also breaks the moment 
   - Stress-tested `MemoryArena` against a ~477 MiB workspace, highlighting how non-reclaiming bump blocks (`> 4 KiB`) require separating resettable scratch arenas from auto-compacting persistent arenas.
 - **`determinant` (`ui/panel`, `ui/surface`, `ui/compositor`, `events`)**:
   - Added a reusable, zero-alloc `TerminalDiffPanel` widget supporting both `FILE *` streaming and horizontally scrollable `TerminalCanvas` TUI painting so other Vexgraph TUIs (such as `semicolon`) can drop in responsive diff views directly.
-  - Surfaced and fixed pre-existing bugs across `determinant`'s TUI stack (`terminal_surface.c`, `terminal_compositor.c`, `terminal_canvas.c`, `terminal_input.c`): static-inline getter collisions with public declarations, a latent `u32 **` pointer-indirection bug in `TerminalSurface`'s `emitRun`/`adoptFront`, a stray `oop/oop.h` include in `terminal_compositor.c`, and const-qualifier/unused-helper warnings — allowing `difference` to present natively through `TerminalSurface` + `TerminalCompositor` under `-Wall -Wextra -Werror`.
+  - Surfaced and fixed pre-existing bugs across `determinant`'s TUI stack (`terminal_surface.c`, `terminal_compositor.c`, `terminal_canvas.c`, `terminal_input.c`): static-inline getter collisions with public declarations, a latent `u32 **` pointer-indirection bug in `TerminalSurface`'s `emitRun`/`adoptFront`, a stray `oop/oop.h` include in `terminal_compositor.c`, and const-qualifier/unused-helper warnings, allowing `difference` to present natively through `TerminalSurface` + `TerminalCompositor` under `-Wall -Wextra -Werror`.
 - **Workspace laws**: Built and verified at zero regressions against `./tools/lint` (`Relational Memory Law`, `String Law`, `Semantic Consistency Law`, `Living Documentation Law`, and `alloc_gate`).
 
 ## Future
@@ -55,4 +55,4 @@ Piping a file watcher into a plain terminal diff printer also breaks the moment 
 - **Disk-save driven**: Only changes flushed to disk (e.g., `Cmd+S` or IDE auto-save) trigger diffs; unsaved in-memory editor buffers are not visible.
 - **Text files up to 256 KiB**: Files larger than 256 KiB or containing NUL bytes in the first 4 KiB are skipped to keep snapshotting and LCS diffing fast and bounded.
 - **In-memory history cap**: The TUI retains the most recent 64 edits in memory and does not persist history to disk after exit.
-- **Not a VCS or merge tool**: `difference` does not read git commits, stage hunks, or apply patches — it is strictly a live observational diff viewer for a watched directory scope.
+- **Not a VCS or merge tool**: `difference` does not read git commits, stage hunks, or apply patches, it is strictly a live observational diff viewer for a watched directory scope.
